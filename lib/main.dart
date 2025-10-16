@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'screens/sign_up_screen.dart';
 import 'screens/sign_up_success.dart';
+import 'screens/add_device_screen.dart';
+import 'screens/control_screen.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -22,8 +24,11 @@ class MyApp extends StatelessWidget {
       ),
       // Để chuyển qua lại giữa màn SignUp và SignUpSuccess, chỉ cần đổi
       // home: const SignUpScreen(), hoặc
-      home: const SignUpSuccessScreen(),
+
+      // home: const SignUpSuccessScreen(),
+      // home: const AddDeviceScreen(),
       // home: const SignUpScreen(),
+      home: const ControlScreen(),
     );
   }
 }
