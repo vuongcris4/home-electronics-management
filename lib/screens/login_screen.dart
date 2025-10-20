@@ -49,14 +49,11 @@ class _LoginScreenState extends State<LoginScreen> {
       await _storage.write(key: 'access_token', value: data['access']);
       await _storage.write(key: 'refresh_token', value: data['refresh']);
 
-      // TODO: Chuyển hướng đến màn hình chính của ứng dụng
-      // Ví dụ: Navigator.pushReplacementNamed(context, '/home');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Đăng nhập thành công!"),
-          backgroundColor: Colors.green,
-        ),
-      );
+      // --- THAY ĐỔI Ở ĐÂY ---
+      // Chuyển hướng đến màn hình chính và xóa các route trước đó
+      Navigator.pushReplacementNamed(context, '/home');
+      // ---------------------
+
     } else {
       // Hiển thị lỗi
       ScaffoldMessenger.of(context).showSnackBar(
