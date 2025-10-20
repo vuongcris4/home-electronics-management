@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'screens/login_screen.dart';
 import 'screens/sign_up_screen.dart';
 import 'screens/sign_up_success.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -20,10 +22,12 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Inter',
         useMaterial3: false,
       ),
-      // Để chuyển qua lại giữa màn SignUp và SignUpSuccess, chỉ cần đổi
-      // home: const SignUpScreen(), hoặc
-      home: const SignUpSuccessScreen(),
-      // home: const SignUpScreen(),
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/signup': (context) => const SignUpScreen(),
+        '/signup-success': (context) => const SignUpSuccessScreen(),
+      },
     );
   }
 }
