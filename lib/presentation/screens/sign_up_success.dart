@@ -16,22 +16,18 @@ class SignUpSuccessScreen extends StatelessWidget {
           children: [
             Column(
               children: [
-                // Success icon positioned at 221px from top
                 const SizedBox(height: 221),
                 Center(
                   child: SizedBox(
                     width: 157.067,
                     height: 155.414,
                     child: SvgPicture.asset(
-                      'assets/images/User_Check.svg',
+                      'assets/img/User_Check.svg', // Đảm bảo bạn có file svg này trong assets/images
                       fit: BoxFit.contain,
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 86.586),
-
-                // Success text
                 const Center(
                   child: Text(
                     'Successfully!!!',
@@ -45,12 +41,9 @@ class SignUpSuccessScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                 ),
-
                 const SizedBox(
                     height:
-                        86.59), // To make button position at 549.59px from top
-
-                // Login button
+                        86.59), 
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 31),
                   width: double.infinity,
@@ -88,8 +81,6 @@ class SignUpSuccessScreen extends StatelessWidget {
                 ),
               ],
             ),
-
-            // Bottom indicator line
           ],
         ),
       ),
