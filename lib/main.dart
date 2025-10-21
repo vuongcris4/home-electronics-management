@@ -8,6 +8,7 @@ import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/login_screen.dart';
 import 'presentation/screens/sign_up_screen.dart';
 import 'presentation/screens/sign_up_success.dart';
+import 'presentation/screens/splash_screen.dart'; // <-- 1. IMPORT
 import 'injection_container.dart' as di;
 
 void main() async {
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
-        ChangeNotifierProvider(create: (_) => di.sl<HomeProvider>()), // <-- THÊM DÒNG NÀY
+        ChangeNotifierProvider(create: (_) => di.sl<HomeProvider>()), 
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -38,8 +39,9 @@ class MyApp extends StatelessWidget {
           fontFamily: 'Inter',
           useMaterial3: false,
         ),
-        initialRoute: '/login',
+        initialRoute: '/splash', // <-- 3. THAY ĐỔI DÒNG NÀY
         routes: {
+          '/splash': (context) => const SplashScreen(), // <-- 2. THÊM DÒNG NÀY
           '/login': (context) => const LoginScreen(),
           '/signup': (context) => const SignUpScreen(),
           '/signup-success': (context) => const SignUpSuccessScreen(),
