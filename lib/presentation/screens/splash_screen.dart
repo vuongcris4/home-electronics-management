@@ -18,7 +18,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _checkLoginStatus() async {
     // Lấy instance của FlutterSecureStorage từ GetIt
-    final storage = sl<FlutterSecureStorage>();
+    final storage = getIt<FlutterSecureStorage>();
     
     // Đợi một chút để người dùng thấy màn hình splash (tùy chọn)
     await Future.delayed(const Duration(milliseconds: 500));

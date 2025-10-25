@@ -13,8 +13,9 @@ import 'injection_container.dart' as di;
 
 void main() async {
   // Khởi tạo dependency injection trước khi chạy app
-  WidgetsFlutterBinding.ensureInitialized(); // Cần thiết
-  await di.init();  
+  WidgetsFlutterBinding.ensureInitialized(); // Tạo hoặc lấy instance duy nhất của WidgetsFlutterBinding. Tạo một binding giữa Flutter engine (C++) và framework (Dart). Khởi tạo hệ thống widget, rendering, scheduler, services…; Cho phép bạn truy cập các API gốc (như plugin, SharedPreferences, MethodChannel, rootBundle…); Được dùng trước khi runApp(), trong main().
+
+  await di.configureDependencies();  
   runApp(const MyApp());
 }
 
@@ -24,10 +25,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Cung cấp AuthProvider cho cây widget
-    return MultiProvider(
+    return MultiProvider( // giúp bạn khai báo nhiều Provider cùng lúc.
       providers: [
-        ChangeNotifierProvider(create: (_) => di.sl<AuthProvider>()),
-        ChangeNotifierProvider(create: (_) => di.sl<HomeProvider>()), 
+        // Đây là provider cơ bản nhất, dùng để:
+          // Tạo instance của class ChangeNotifier
+          // Quản lý vòng đời (dispose tự động)
+          // Cho phép context.watch, context.read, Consumer, v.v. trong UI.
+        ChangeNotifierProvider(create: (_) => di.getIt<AuthProvider>()),
+        ChangeNotifierProvider(create: (_) => di.getIt<HomeProvider>()), 
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -39,9 +44,9 @@ class MyApp extends StatelessWidget {
           fontFamily: 'Inter',
           useMaterial3: false,
         ),
-        initialRoute: '/splash', // <-- 3. THAY ĐỔI DÒNG NÀY
+        initialRoute: '/splash',
         routes: {
-          '/splash': (context) => const SplashScreen(), // <-- 2. THÊM DÒNG NÀY
+          '/splash': (context) => const SplashScreen(), 
           '/login': (context) => const LoginScreen(),
           '/signup': (context) => const SignUpScreen(),
           '/signup-success': (context) => const SignUpSuccessScreen(),

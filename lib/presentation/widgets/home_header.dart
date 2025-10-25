@@ -12,7 +12,7 @@ class HomeHeader extends StatelessWidget {
 
   Future<void> _logout(BuildContext context) async {
     // Lấy instance của storage
-    final storage = sl<FlutterSecureStorage>();
+    final storage = getIt<FlutterSecureStorage>();
     
     // Xóa tất cả các token đã lưu
     await storage.delete(key: 'access_token');

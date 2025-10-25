@@ -15,11 +15,11 @@ class AuthProvider extends ChangeNotifier {
     required this.registerUseCase,
   });
 
-  ViewState _loginState = ViewState.Idle;
+  ViewState _loginState = ViewState.Idle; // Các biến private để lưu trạng thái hiện tại của tác vụ đăng nhập và đăng ký. UI sẽ "lắng nghe" sự thay đổi của các biến này để tự cập nhật.
   ViewState get loginState => _loginState;
 
   ViewState _registerState = ViewState.Idle;
-  ViewState get registerState => _registerState;
+  ViewState get registerState => _registerState;  // getter
 
   String _errorMessage = '';
   String get errorMessage => _errorMessage;
@@ -45,7 +45,7 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> login(String email, String password) async {
     _setLoginState(ViewState.Loading);
 
-    final result = await loginUseCase(LoginParams(email: email, password: password));
+    final result = await loginUseCase(LoginParams(email: email, password: password)); // tầng presentation gọi tầng domain
 
     bool isSuccess = false;
     result.fold(

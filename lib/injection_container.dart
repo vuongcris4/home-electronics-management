@@ -1,4 +1,5 @@
 // lib/injection_container.dart
+// dùng plantuml.com để vẽ flow
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
@@ -30,79 +31,94 @@ import 'infrastructure/repositories/device_repository_impl.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/home_provider.dart';
 
-// Service Locator
-final sl = GetIt.instance;
+//Nhiệm vụ chính của get_it là: quản lý và cung cấp instance của các service (hoặc class) đã được đăng ký từ bên ngoài, 
+// để bạn có thể lấy ra inject vào Provider mà không phải khởi tạo thủ công từng nơi.
 
-Future<void> init() async {
+// Service Locator, đối tượng trung tâm quản lí các dependency (phụ thuộc) trong ứng dụng
+// Nghĩa là bạn có một singleton toàn cục, nơi bạn “đăng ký” và “lấy ra” các đối tượng cần dùng.
+final getIt = GetIt.instance;
+
+Future<void> configureDependencies() async {
   // -------------------- Presentation --------------------
-  sl.registerFactory(
+  getIt.registerFactory<AuthProvider>(
     () => AuthProvider(
-      loginUseCase: sl(),
-      registerUseCase: sl(),
+      loginUseCase: getIt<LoginUseCase>(),
+      registerUseCase: getIt<RegisterUseCase>(),
     ),
   );
 
-  sl.registerFactory(
+
+  getIt.registerFactory<HomeProvider>(
     () => HomeProvider(
-      getRoomsUseCase: sl(),
-      addRoomUseCase: sl(),
-      deleteRoomUseCase: sl(),
-      addDeviceUseCase: sl(),
-      deleteDeviceUseCase: sl(),
-      storage: sl(), // FlutterSecureStorage
+      getRoomsUseCase: getIt<GetRoomsUseCase>(),
+      addRoomUseCase: getIt<AddRoomUseCase>(),
+      deleteRoomUseCase: getIt<DeleteRoomUseCase>(),
+      addDeviceUseCase: getIt<AddDeviceUseCase>(),
+      deleteDeviceUseCase: getIt<DeleteDeviceUseCase>(),
+      storage: getIt<FlutterSecureStorage>(),
     ),
   );
 
   // -------------------- Domain (Use Cases) --------------------
   // Auth
-  sl.registerLazySingleton(() => LoginUseCase(sl<AuthRepository>()));
-  sl.registerLazySingleton(() => RegisterUseCase(sl<AuthRepository>()));
+  // Câu này đăng ký một singleton (thể hiện duy nhất), nhưng chỉ khởi tạo khi lần đầu tiên được gọi → “lazy”.
+  // getIt.registerLazySingleton<T>(T Function() factoryFunc)
+  // T là kiểu bạn muốn đăng ký (ở đây là LoginUseCase)
+  // getIt<AuthRepository>() có nghĩa là: Lấy instance AuthRepository đã được đăng ký trong getIt từ trước.
+  getIt.registerLazySingleton(() => LoginUseCase(getIt<AuthRepository>()),);
+  getIt.registerLazySingleton(() => RegisterUseCase(getIt<AuthRepository>()));
 
   // Rooms -> dùng RoomRepository
-  sl.registerLazySingleton(() => GetRoomsUseCase(sl<RoomRepository>()));
-  sl.registerLazySingleton(() => AddRoomUseCase(sl<RoomRepository>()));
-  sl.registerLazySingleton(() => DeleteRoomUseCase(sl<RoomRepository>()));
+  getIt.registerLazySingleton(() => GetRoomsUseCase(getIt<RoomRepository>()));
+  getIt.registerLazySingleton(() => AddRoomUseCase(getIt<RoomRepository>()));
+  getIt.registerLazySingleton(() => DeleteRoomUseCase(getIt<RoomRepository>()));
 
   // Devices -> dùng DeviceRepository
-  sl.registerLazySingleton(() => AddDeviceUseCase(sl<DeviceRepository>()));
-  sl.registerLazySingleton(() => DeleteDeviceUseCase(sl<DeviceRepository>()));
+  getIt.registerLazySingleton(() => AddDeviceUseCase(getIt<DeviceRepository>()));
+  getIt.registerLazySingleton(() => DeleteDeviceUseCase(getIt<DeviceRepository>()));
 
   // -------------------- Infrastructure (Repositories) --------------------
-  sl.registerLazySingleton<AuthRepository>(
+  // Kiểm tra xem LoginUseCase đã được tạo chưa
+  // → nếu chưa → gọi LoginUseCase(getIt<AuthRepository>())
+  // Lấy AuthRepositoryImpl (đã đăng ký dưới interface AuthRepository)
+  // Tạo LoginUseCase với dependency đó
+  // Giữ lại instance này cho các lần gọi sau (singleton).
+  
+  getIt.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(
-      remoteDataSource: sl(),
-      localDataSource: sl(),
+      remoteDataSource: getIt<AuthRemoteDataSource>(),  // getIt<AuthRemoteDataSource>()
+      localDataSource: getIt<AuthLocalDataSource>(),
     ),
   );
 
-  sl.registerLazySingleton<RoomRepository>(
-    () => RoomRepositoryImpl(remote: sl()),
+  getIt.registerLazySingleton<RoomRepository>(
+    () => RoomRepositoryImpl(remote: getIt<RoomRemoteDataSource>()),
   );
 
-  sl.registerLazySingleton<DeviceRepository>(
-    () => DeviceRepositoryImpl(remote: sl()),
+  getIt.registerLazySingleton<DeviceRepository>(
+    () => DeviceRepositoryImpl(remote: getIt<DeviceRemoteDataSource>()),
   );
 
   // -------------------- Infrastructure (Data Sources) --------------------
   // Auth Data Sources
-  sl.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSourceImpl(client: sl()),
+  getIt.registerLazySingleton<AuthRemoteDataSource>(
+    () => AuthRemoteDataSourceImpl(client: getIt<http.Client>()),
   );
-  sl.registerLazySingleton<AuthLocalDataSource>(
-    () => AuthLocalDataSourceImpl(storage: sl()),
+  getIt.registerLazySingleton<AuthLocalDataSource>(
+    () => AuthLocalDataSourceImpl(storage: getIt<FlutterSecureStorage>()),
   );
 
   // Room Data Source
-  sl.registerLazySingleton<RoomRemoteDataSource>(
-    () => RoomRemoteDataSourceImpl(client: sl(), storage: sl()),
+  getIt.registerLazySingleton<RoomRemoteDataSource>(
+    () => RoomRemoteDataSourceImpl(client: getIt<http.Client>(), storage: getIt<FlutterSecureStorage>()),
   );
 
   // Device Data Source
-  sl.registerLazySingleton<DeviceRemoteDataSource>(
-    () => DeviceRemoteDataSourceImpl(client: sl(), storage: sl()),
+  getIt.registerLazySingleton<DeviceRemoteDataSource>(
+    () => DeviceRemoteDataSourceImpl(client: getIt<http.Client>(), storage: getIt<FlutterSecureStorage>()),
   );
 
   // -------------------- External --------------------
-  sl.registerLazySingleton<http.Client>(() => http.Client());
-  sl.registerLazySingleton<FlutterSecureStorage>(() => const FlutterSecureStorage());
+  getIt.registerLazySingleton<http.Client>(() => http.Client());
+  getIt.registerLazySingleton<FlutterSecureStorage>(() => const FlutterSecureStorage());
 }

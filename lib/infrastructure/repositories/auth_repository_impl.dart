@@ -1,4 +1,6 @@
 // lib/infrastructure/repositories/auth_repository_impl.dart
+
+// Repository quyết định dùng DataSource nào, kết hợp kết quả ra sao, chuyển Exception → Failure, v.v.
 import 'package:dartz/dartz.dart';
 import '../../core/error/exceptions.dart';
 import '../../core/error/failures.dart';

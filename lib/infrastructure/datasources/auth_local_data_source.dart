@@ -1,4 +1,6 @@
 // lib/infrastructure/datasources/auth_local_data_source.dart
+
+// DataSource chỉ lo gọi và trả về dữ liệu thô (API, JSON, SQLite...).
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 abstract class AuthLocalDataSource {
