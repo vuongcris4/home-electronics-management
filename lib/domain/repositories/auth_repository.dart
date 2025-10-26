@@ -1,6 +1,7 @@
 // lib/domain/repositories/auth_repository.dart
 import 'package:dartz/dartz.dart';
 import '../../core/error/failures.dart';
+import '../entities/user.dart';
 
 // interface cho repository theo clean architecture
 abstract class AuthRepository {
@@ -14,4 +15,7 @@ abstract class AuthRepository {
     required String password2,
     required String phoneNumber,
   });
+
+  Future<Either<Failure, User>> getUserProfile(); 
+
 }

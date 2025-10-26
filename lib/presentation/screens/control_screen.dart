@@ -1,0 +1,290 @@
+// lib/presentation/screens/control_screen.dart
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:sleek_circular_slider/sleek_circular_slider.dart'; // <-- 1. IMPORT PACKAGE MỚI
+
+import '../../domain/entities/device.dart';
+import '../providers/home_provider.dart';
+
+// --- Các hằng số màu sắc ---
+const Color kBackgroundColor = Color(0xFFF2F6FC);
+const Color kPrimaryColor = Color(0xFF2666DE);
+const Color kTextColorPrimary = Color(0xFF07123C);
+const Color kTextColorSecondary = Color(0xFF6F7EA8);
+
+/// Màn hình điều khiển cho một thiết bị cụ thể.
+class ControlScreen extends StatefulWidget {
+  final Device device;
+
+  const ControlScreen({super.key, required this.device});
+
+  @override
+  State<ControlScreen> createState() => _ControlScreenState();
+}
+
+class _ControlScreenState extends State<ControlScreen> {
+  @override
+  Widget build(BuildContext context) {
+    // Dùng Consumer để lắng nghe thay đổi trạng thái từ HomeProvider
+    return Consumer<HomeProvider>(
+      builder: (context, provider, child) {
+        // Lấy trạng thái mới nhất của thiết bị từ provider để đảm bảo UI luôn được cập nhật real-time
+        final device = provider.findDeviceById(widget.device.id) ?? widget.device;
+
+        return Scaffold(
+          backgroundColor: kBackgroundColor,
+          body: SafeArea(
+            child: Stack(
+              children: [
+                // Phần nội dung chính
+                Column(
+                  children: [
+                    const SizedBox(height: 140), // Khoảng trống cho header
+                    Expanded(
+                      child: Container(
+                        width: double.infinity,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(32),
+                            topRight: Radius.circular(32),
+                          ),
+                        ),
+                        // Hiển thị widget điều khiển tương ứng với loại thiết bị
+                        child: device is DimmableLightDevice
+                            ? _DimmableLightControls(device: device)
+                            : _BinarySwitchControls(device: device),
+                      ),
+                    ),
+                  ],
+                ),
+                // Header nằm đè lên trên
+                _Header(device: device),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+
+// --- WIDGET HEADER ---
+class _Header extends StatelessWidget {
+  final Device device;
+  const _Header({required this.device});
+
+  // Hàm hiển thị dialog xác nhận xóa
+  void _showDeleteConfirmation(BuildContext context, HomeProvider provider) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Device?'),
+        content: Text("Are you sure you want to delete '${device.name}'? This action cannot be undone."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              final success = await provider.removeDevice(device.id);
+              if (success && context.mounted) {
+                Navigator.pop(context); // Quay lại màn hình home sau khi xóa
+              }
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = Provider.of<HomeProvider>(context, listen: false);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, color: kTextColorPrimary),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          Text(
+            device.name,
+            style: const TextStyle(
+              color: kTextColorPrimary,
+              fontSize: 20,
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: kPrimaryColor, size: 28),
+            onPressed: () => _showDeleteConfirmation(context, provider),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// --- BỘ ĐIỀU KHIỂN CHO ĐÈN ĐIỀU CHỈNH ĐỘ SÁNG (ĐÃ SỬA) ---
+class _DimmableLightControls extends StatelessWidget {
+  final DimmableLightDevice device;
+  const _DimmableLightControls({required this.device});
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = Provider.of<HomeProvider>(context, listen: false);
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        SleekCircularSlider(
+          appearance: CircularSliderAppearance(
+            customWidths: CustomSliderWidths(
+              trackWidth: 12,
+              progressBarWidth: 12,
+              handlerSize: 8,
+            ),
+            customColors: CustomSliderColors(
+              trackColor: const Color(0xFFECF1FD),
+              dotColor: device.isOn ? kPrimaryColor : kTextColorSecondary,
+              progressBarColors: device.isOn
+                  ? [const Color(0xFF538FFB), const Color(0xFF2666DE)]
+                  : [kTextColorSecondary, kTextColorSecondary],
+            ),
+            startAngle: 135,
+            angleRange: 270,
+            size: MediaQuery.of(context).size.width * 0.7,
+          ),
+          min: 0,
+          max: 100,
+          initialValue: device.brightness.toDouble(),
+          onChangeEnd: (value) {
+            provider.updateDeviceState(device.id, {'brightness': value.round()});
+          },
+          innerWidget: (double value) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text.rich(
+                    TextSpan(children: [
+                      TextSpan(
+                        text: '${value.round()}',
+                        style: TextStyle(
+                          color: device.isOn ? kTextColorPrimary : kTextColorSecondary,
+                          fontSize: 30,
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '%',
+                        style: TextStyle(
+                          color: device.isOn
+                              ? const Color(0xFFC9CBD8)
+                              : kTextColorSecondary.withOpacity(0.5),
+                          fontSize: 30,
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ]),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Brightness',
+                    style: TextStyle(
+                      color: device.isOn ? kTextColorPrimary : kTextColorSecondary,
+                      fontSize: 15,
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        _PowerControlButton(device: device),
+      ],
+    );
+  }
+}
+
+// --- BỘ ĐIỀU KHIỂN CHO CÔNG TẮC THƯỜNG (ĐÃ SỬA) ---
+class _BinarySwitchControls extends StatelessWidget {
+  final Device device;
+  const _BinarySwitchControls({required this.device});
+
+  @override
+  Widget build(BuildContext context) {
+    // Bọc trong Center để đảm bảo nút bấm luôn ở giữa
+    return Center(
+      child: _PowerControlButton(device: device),
+    );
+  }
+}
+
+// --- NÚT NGUỒN ON/OFF CHUNG ---
+class _PowerControlButton extends StatelessWidget {
+  final Device device;
+  const _PowerControlButton({required this.device});
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = Provider.of<HomeProvider>(context, listen: false);
+    final bool isOn = device.isOn;
+
+    return GestureDetector(
+      onTap: () {
+        provider.toggleDeviceStatus(device.id, !isOn);
+      },
+      child: Container(
+        width: 120,
+        height: 146,
+        decoration: BoxDecoration(
+          color: isOn ? kPrimaryColor : kBackgroundColor,
+          borderRadius: BorderRadius.circular(19),
+          border: isOn ? null : Border.all(color: Colors.grey.shade300),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.power_settings_new_rounded,
+              color: isOn ? Colors.white : kTextColorSecondary,
+              size: 30,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Power',
+              style: TextStyle(
+                color: isOn ? const Color(0xFFD4E2FD) : kTextColorSecondary,
+                fontSize: 14,
+                fontFamily: 'Inter',
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              isOn ? 'ON' : 'OFF',
+              style: TextStyle(
+                color: isOn ? const Color(0xFFD4E2FD) : kTextColorSecondary,
+                fontSize: 16,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

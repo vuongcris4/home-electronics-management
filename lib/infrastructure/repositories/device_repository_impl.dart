@@ -1,3 +1,4 @@
+// lib/infrastructure/repositories/device_repository_impl.dart
 import 'package:dartz/dartz.dart';
 import '../../core/error/exceptions.dart';
 import '../../core/error/failures.dart';
@@ -11,10 +12,15 @@ class DeviceRepositoryImpl implements DeviceRepository {
 
   @override
   Future<Either<Failure, Device>> addDevice(
-    String name, String subtitle, String iconAsset, int roomId,
+    String name,
+    String subtitle,
+    String iconAsset,
+    int roomId,
+    DeviceType deviceType, // <-- ADDED
   ) async {
     try {
-      final dev = await remote.addDevice(name, subtitle, iconAsset, roomId);
+      final dev =
+          await remote.addDevice(name, subtitle, iconAsset, roomId, deviceType);
       return Right(dev);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

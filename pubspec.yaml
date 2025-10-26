@@ -31,6 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   dio: ^5.9.0
+  sleek_circular_slider: ^2.0.1
 
   # Network & Storage
   http: ^1.2.1

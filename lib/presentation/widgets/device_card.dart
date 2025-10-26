@@ -26,6 +26,10 @@ class DeviceCard extends StatelessWidget {
     final Color iconColor = isActive ? Colors.white : kPrimaryColor;
 
     return GestureDetector(
+      // --- 1. ADD ONTAP HANDLER ---
+      onTap: () {
+        Navigator.pushNamed(context, '/control-device', arguments: device);
+      },
       onLongPress: () => _showDeleteDeviceConfirmation(context, device),
       child: Container(
         padding: const EdgeInsets.all(15),
@@ -49,10 +53,14 @@ class DeviceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Image.asset(
-                  'assets/icons/lightbulb.png', // Thay thế bằng device.iconAsset
+                  device.iconAsset, // Use dynamic icon asset
                   width: 32,
                   height: 32,
                   color: iconColor,
+                   errorBuilder: (context, error, stackTrace) {
+                    // Fallback icon in case of error
+                    return Icon(Icons.error, color: iconColor, size: 32);
+                  },
                 ),
                 Transform.scale(
                   scale: 0.9,

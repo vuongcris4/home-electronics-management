@@ -6,6 +6,7 @@ import '../widgets/device_card.dart';
 import '../widgets/home_header.dart';
 import '../widgets/room_tabs.dart';
 import '../widgets/home_bottom_nav_bar.dart';
+import './account.dart'; // Import the account screen
 
 const Color kBackgroundColor = Color(0xFFF2F6FC);
 
@@ -17,11 +18,32 @@ class SmartHomeScreen extends StatefulWidget {
 }
 
 class _SmartHomeScreenState extends State<SmartHomeScreen> {
+  int _selectedIndex = 0;
+
   @override
   void initState() {
     super.initState();
+    // Fetch initial room data when the widget is first built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<HomeProvider>(context, listen: false).fetchRooms();
+    });
+  }
+
+  // List of the main pages in the app
+  static const List<Widget> _pages = <Widget>[
+    _HomeScreenContent(), // Index 0: The main home screen with devices
+    Center(
+      child: Text(
+        "Stats Screen (Placeholder)",
+        style: TextStyle(fontSize: 18, color: Colors.grey),
+      ),
+    ), // Index 1: A placeholder for a future stats screen
+    ProfileScreen(),      // Index 2: The user's account screen
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
     });
   }
 
@@ -29,33 +51,52 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBackgroundColor,
-      body: SafeArea(
-        bottom: false,
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Column(
-                children: [
-                  const SizedBox(height: 130),
-                  const RoomTabs(),
-                  const SizedBox(height: 20),
-                  const Expanded(child: _DeviceGrid()),
-                  const SizedBox(height: 20),
-                  _AddDeviceButton(),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
-            const HomeHeader(),
-          ],
-        ),
+      // Display the selected page from the _pages list
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
       ),
-      bottomNavigationBar: const HomeBottomNavBar(),
+      // Use the updated bottom navigation bar
+      bottomNavigationBar: HomeBottomNavBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+      ),
     );
   }
 }
 
+/// This widget contains the original UI for the home screen.
+class _HomeScreenContent extends StatelessWidget {
+  const _HomeScreenContent();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              children: [
+                const SizedBox(height: 130), // Space for the header
+                const RoomTabs(),
+                const SizedBox(height: 20),
+                const Expanded(child: _DeviceGrid()),
+                const SizedBox(height: 20),
+                _AddDeviceButton(),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+          const HomeHeader(),
+        ],
+      ),
+    );
+  }
+}
+
+/// The grid that displays device cards. (Unchanged)
 class _DeviceGrid extends StatelessWidget {
   const _DeviceGrid();
   @override
@@ -65,8 +106,6 @@ class _DeviceGrid extends StatelessWidget {
         if (provider.state == HomeState.Loading) {
           return const Center(child: CircularProgressIndicator());
         }
-
-        // --- THÊM PHẦN XỬ LÝ LỖI NÀY ---
         if (provider.state == HomeState.Error) {
           return Center(
             child: Padding(
@@ -79,8 +118,6 @@ class _DeviceGrid extends StatelessWidget {
             ),
           );
         }
-        // ---------------------------------
-
         if (provider.selectedRoom == null) {
           return const Center(
               child: Text("Select a room or add a new one.",
@@ -111,7 +148,7 @@ class _DeviceGrid extends StatelessWidget {
   }
 }
 
-// Nút và Dialog thêm thiết bị cũng giữ lại vì tính đặc thù
+/// The "Add Device" button. (Unchanged)
 class _AddDeviceButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -119,7 +156,7 @@ class _AddDeviceButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: provider.selectedRoom == null
           ? null
-          : () => _showAddDeviceDialog(context),
+          : () => Navigator.pushNamed(context, '/add-device'),
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFF2666DE),
         minimumSize: const Size(260, 60),
@@ -131,52 +168,6 @@ class _AddDeviceButton extends StatelessWidget {
         'Add Device',
         style: TextStyle(
             color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  void _showAddDeviceDialog(BuildContext context) {
-    final provider = Provider.of<HomeProvider>(context, listen: false);
-    final nameController = TextEditingController();
-    final subtitleController = TextEditingController();
-    const defaultIcon = 'assets/icons/lightbulb.png'; // Tạm thời
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('Add Device to ${provider.selectedRoom!.name}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: "Device Name"),
-                autofocus: true),
-            const SizedBox(height: 8),
-            TextField(
-                controller: subtitleController,
-                decoration:
-                    const InputDecoration(labelText: "Subtitle (e.g., brand)")),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              if (nameController.text.trim().isNotEmpty) {
-                provider.addNewDevice(
-                  nameController.text.trim(),
-                  subtitleController.text.trim(),
-                  defaultIcon,
-                );
-                Navigator.pop(dialogContext);
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
       ),
     );
   }

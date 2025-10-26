@@ -1,6 +1,9 @@
 // lib/presentation/providers/auth_provider.dart
 import 'package:flutter/material.dart';
-import '../../core/error/failures.dart'; // <-- ADD THIS IMPORT
+import '../../core/error/failures.dart';
+import '../../core/usecase/usecase.dart'; // <-- HINZUGEFÜGT
+import '../../domain/entities/user.dart'; // <-- HINZUGEFÜGT
+import '../../domain/usecases/get_user_profile_usecase.dart'; // <-- HINZUGEFÜGT
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
 
@@ -9,21 +12,29 @@ enum ViewState { Idle, Loading, Success, Error }
 class AuthProvider extends ChangeNotifier {
   final LoginUseCase loginUseCase;
   final RegisterUseCase registerUseCase;
+  final GetUserProfileUseCase getUserProfileUseCase; // <-- HINZUGEFÜGT
 
   AuthProvider({
     required this.loginUseCase,
     required this.registerUseCase,
+    required this.getUserProfileUseCase, // <-- HINZUGEFÜGT
   });
 
-  ViewState _loginState = ViewState.Idle; // Các biến private để lưu trạng thái hiện tại của tác vụ đăng nhập và đăng ký. UI sẽ "lắng nghe" sự thay đổi của các biến này để tự cập nhật.
+  ViewState _loginState = ViewState.Idle;
   ViewState get loginState => _loginState;
 
   ViewState _registerState = ViewState.Idle;
-  ViewState get registerState => _registerState;  // getter
+  ViewState get registerState => _registerState;
+
+  ViewState _profileState = ViewState.Idle; // <-- HINZUGEFÜGT
+  ViewState get profileState => _profileState; // <-- HINZUGEFÜGT
 
   String _errorMessage = '';
   String get errorMessage => _errorMessage;
-  
+
+  User? _user; // <-- HINZUGEFÜGT
+  User? get user => _user; // <-- HINZUGEFÜGT
+
   void _setLoginState(ViewState state) {
     _loginState = state;
     notifyListeners();
@@ -34,26 +45,31 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> login(String email, String password) async {
-    _setLoginState(ViewState.Loading);  // rebuild lại UI với trạng thái loading
+  void _setProfileState(ViewState state) {
+    // <-- HINZUGEFÜGT
+    _profileState = state;
+    notifyListeners();
+  }
 
-    final result = await loginUseCase(LoginParams(email: email, password: password)); // tầng presentation gọi tầng domain
+  Future<bool> login(String email, String password) async {
+    _setLoginState(ViewState.Loading);
+    final result =
+        await loginUseCase(LoginParams(email: email, password: password));
 
     bool isSuccess = false;
     result.fold(
       (failure) {
-        _errorMessage = failure is ServerFailure ? failure.message : 'Lỗi không xác định';
-        // rebuild lại UI với trạng thái Error
-        _setLoginState(ViewState.Error);  // để notifyListeners() → widget tự rebuild
+        _errorMessage =
+            failure is ServerFailure ? failure.message : 'Lỗi không xác định';
+        _setLoginState(ViewState.Error);
         isSuccess = false;
       },
       (_) {
-        // rebuild lại UI với trạng thái Success
-        _setLoginState(ViewState.Success); // Nếu comment lại thì nút login sẽ quay vòng liên tục vì k rebuild UI để cập nhật state
+        _setLoginState(ViewState.Success);
         isSuccess = true;
       },
     );
-    return isSuccess; // Trả kết quả logic về cho widget hiện tại đang gọi, dùng return isSuccess để biết hành động kế tiếp (ví dụ: chuyển trang, show dialog)
+    return isSuccess;
   }
 
   Future<bool> register({
@@ -64,7 +80,7 @@ class AuthProvider extends ChangeNotifier {
     required String phoneNumber,
   }) async {
     _setRegisterState(ViewState.Loading);
-    
+
     final params = RegisterParams(
       name: name,
       email: email,
@@ -77,7 +93,8 @@ class AuthProvider extends ChangeNotifier {
     bool isSuccess = false;
     result.fold(
       (failure) {
-        _errorMessage = failure is ServerFailure ? failure.message : 'Lỗi không xác định';
+        _errorMessage =
+            failure is ServerFailure ? failure.message : 'Lỗi không xác định';
         _setRegisterState(ViewState.Error);
         isSuccess = false;
       },
@@ -87,5 +104,26 @@ class AuthProvider extends ChangeNotifier {
       },
     );
     return isSuccess;
+  }
+
+  // --- DIESE METHODE HINZUFÜGEN ---
+  Future<void> fetchUserProfile() async {
+    // Verhindern Sie das Abrufen, wenn bereits geladen wird oder geladen ist
+    if (_profileState == ViewState.Loading || _user != null) return;
+
+    _setProfileState(ViewState.Loading);
+    final result = await getUserProfileUseCase(NoParams());
+
+    result.fold(
+      (failure) {
+        _errorMessage =
+            failure is ServerFailure ? failure.message : 'Unknown Error';
+        _setProfileState(ViewState.Error);
+      },
+      (userData) {
+        _user = userData;
+        _setProfileState(ViewState.Success);
+      },
+    );
   }
 }

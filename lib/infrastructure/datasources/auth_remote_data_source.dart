@@ -1,7 +1,7 @@
 // lib/infrastructure/datasources/auth_remote_data_source.dart
-import 'dart:convert';
-import 'package:dio/dio.dart'; // <-- Sửa import
+import 'package:dio/dio.dart';
 import '../../core/error/exceptions.dart';
+import '../../domain/entities/user.dart'; 
 
 abstract class AuthRemoteDataSource {
   Future<Map<String, dynamic>> login(String email, String password);
@@ -12,12 +12,13 @@ abstract class AuthRemoteDataSource {
     required String password2,
     required String phoneNumber,
   });
+  Future<User> getUserProfile(); 
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
-  final Dio dio; // <-- Sửa ở đây
+  final Dio dio;
 
-  AuthRemoteDataSourceImpl({required this.dio}); // <-- Sửa ở đây
+  AuthRemoteDataSourceImpl({required this.dio});
 
   @override
   Future<Map<String, dynamic>> login(String email, String password) async {
@@ -66,6 +67,17 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         }
       }
       throw ServerException(errorMessage);
+    }
+  }
+
+  @override
+  Future<User> getUserProfile() async {
+    try {
+      final response = await dio.get('/users/me/');
+      return User.fromJson(response.data);
+    } on DioException catch (e) {
+      throw ServerException(
+          e.response?.data['detail'] ?? 'Failed to get user profile');
     }
   }
 }

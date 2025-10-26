@@ -1,9 +1,8 @@
 // lib/infrastructure/repositories/auth_repository_impl.dart
-
-// Repository quyết định dùng DataSource nào, kết hợp kết quả ra sao, chuyển Exception → Failure, v.v.
 import 'package:dartz/dartz.dart';
 import '../../core/error/exceptions.dart';
 import '../../core/error/failures.dart';
+import '../../domain/entities/user.dart'; // <-- HINZUGEFÜGT
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_local_data_source.dart';
 import '../datasources/auth_remote_data_source.dart';
@@ -48,6 +47,17 @@ class AuthRepositoryImpl implements AuthRepository {
         phoneNumber: phoneNumber,
       );
       return const Right(unit);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    }
+  }
+
+  // --- DIESE METHODE HINZUFÜGEN ---
+  @override
+  Future<Either<Failure, User>> getUserProfile() async {
+    try {
+      final user = await remoteDataSource.getUserProfile();
+      return Right(user);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     }

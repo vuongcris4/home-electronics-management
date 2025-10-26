@@ -4,39 +4,51 @@ import 'package:flutter/material.dart';
 const Color kPrimaryColor = Color(0xFF2666DE);
 
 class HomeBottomNavBar extends StatelessWidget {
-  const HomeBottomNavBar({super.key});
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+
+  const HomeBottomNavBar({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 75,
       decoration: const BoxDecoration(
-          color: kPrimaryColor,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
-          )),
+        color: kPrimaryColor,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          // TODO: Thêm hành động cho các nút
-          IconButton(
-            icon: Image.asset('assets/icons/document.png',
-                width: 30, height: 30, color: Colors.white),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: Image.asset('assets/icons/home.png',
-                width: 30, height: 30, color: Colors.white.withOpacity(0.5)),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: Image.asset('assets/icons/profile.png',
-                width: 30, height: 30, color: Colors.white),
-            onPressed: () {},
-          ),
+          _buildNavItem(asset: 'assets/icons/home.png', index: 0, context: context),
+          _buildNavItem(asset: 'assets/icons/document.png', index: 1, context: context),
+          _buildNavItem(asset: 'assets/icons/profile.png', index: 2, context: context),
         ],
       ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required String asset,
+    required int index,
+    required BuildContext context,
+  }) {
+    final isSelected = currentIndex == index;
+    return IconButton(
+      icon: Image.asset(
+        asset,
+        width: 30,
+        height: 30,
+        color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+      ),
+      onPressed: () => onTap(index),
     );
   }
 }

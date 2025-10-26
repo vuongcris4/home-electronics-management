@@ -1,3 +1,4 @@
+// lib/domain/usecases/add_device_usecase.dart
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 
@@ -13,7 +14,9 @@ class AddDeviceUseCase implements UseCase<Device, AddDeviceParams> {
 
   @override
   Future<Either<Failure, Device>> call(AddDeviceParams params) async {
-    return await repository.addDevice(params.name, params.subtitle, params.iconAsset, params.roomId);
+    // Pass the new deviceType parameter to the repository
+    return await repository.addDevice(params.name, params.subtitle,
+        params.iconAsset, params.roomId, params.deviceType);
   }
 }
 
@@ -22,14 +25,16 @@ class AddDeviceParams extends Equatable {
   final String subtitle;
   final String iconAsset;
   final int roomId;
+  final DeviceType deviceType; // <-- ADDED
 
   const AddDeviceParams({
     required this.name,
     required this.subtitle,
     required this.iconAsset,
     required this.roomId,
+    required this.deviceType, // <-- ADDED
   });
 
   @override
-  List<Object> get props => [name, subtitle, iconAsset, roomId];
+  List<Object> get props => [name, subtitle, iconAsset, roomId, deviceType];
 }
