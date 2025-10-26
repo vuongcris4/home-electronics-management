@@ -1,6 +1,5 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+// lib/infrastructure/datasources/room_remote_data_source.dart
+import 'package:dio/dio.dart'; // <-- Sửa import
 import '../../core/error/exceptions.dart';
 import '../../domain/entities/room.dart';
 
@@ -11,49 +10,38 @@ abstract class RoomRemoteDataSource {
 }
 
 class RoomRemoteDataSourceImpl implements RoomRemoteDataSource {
-  final http.Client client;
-  final FlutterSecureStorage storage;
-  final String _baseUrl = "https://mrh3.dongnama.app/api";
+  final Dio dio; // <-- Sửa ở đây
 
-  RoomRemoteDataSourceImpl({required this.client, required this.storage});
-
-  Future<Map<String, String>> _headers() async {
-    final token = await storage.read(key: 'access_token');
-    if (token == null) throw ServerException("Token not found");
-    return {
-      'Content-Type': 'application/json; charset=UTF-8',
-      'Authorization': 'Bearer $token',
-    };
-  }
+  RoomRemoteDataSourceImpl({required this.dio}); // <-- Sửa ở đây
 
   @override
   Future<List<Room>> getRooms() async {
-    final res = await client.get(Uri.parse('$_baseUrl/rooms/'), headers: await _headers());
-    if (res.statusCode == 200) {
-      final List<dynamic> jsonList = jsonDecode(utf8.decode(res.bodyBytes));
+    try {
+      final res = await dio.get('/rooms/');
+      final List<dynamic> jsonList = res.data;
       return jsonList.map((e) => Room.fromJson(e)).toList();
+    } on DioException {
+      throw ServerException("Failed to load rooms");
     }
-    throw ServerException("Failed to load rooms");
   }
 
   @override
   Future<Room> addRoom(String name) async {
-    final res = await client.post(
-      Uri.parse('$_baseUrl/rooms/'),
-      headers: await _headers(),
-      body: jsonEncode({'name': name}),
-    );
-    if (res.statusCode == 201) {
-      return Room.fromJson(jsonDecode(utf8.decode(res.bodyBytes)));
+    try {
+      final res = await dio.post('/rooms/', data: {'name': name});
+      return Room.fromJson(res.data);
+    } on DioException {
+      throw ServerException("Failed to add room");
     }
-    throw ServerException("Failed to add room");
   }
 
   @override
   Future<void> deleteRoom(int roomId) async {
-    final res = await client.delete(
-      Uri.parse('$_baseUrl/rooms/$roomId/'), headers: await _headers(),
-    );
-    if (res.statusCode != 204) throw ServerException("Failed to delete room");
+    try {
+      final res = await dio.delete('/rooms/$roomId/');
+      if (res.statusCode != 204) throw ServerException("Failed to delete room");
+    } on DioException {
+      throw ServerException("Failed to delete room");
+    }
   }
 }

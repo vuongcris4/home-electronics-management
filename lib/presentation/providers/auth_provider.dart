@@ -23,14 +23,6 @@ class AuthProvider extends ChangeNotifier {
 
   String _errorMessage = '';
   String get errorMessage => _errorMessage;
-
-  void _setState(ViewState state) {
-    if (state == ViewState.Loading) {
-      _loginState = ViewState.Loading;
-      _registerState = ViewState.Loading;
-    }
-    notifyListeners();
-  }
   
   void _setLoginState(ViewState state) {
     _loginState = state;
@@ -43,7 +35,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> login(String email, String password) async {
-    _setLoginState(ViewState.Loading);
+    _setLoginState(ViewState.Loading);  // rebuild lại UI với trạng thái loading
 
     final result = await loginUseCase(LoginParams(email: email, password: password)); // tầng presentation gọi tầng domain
 
@@ -51,15 +43,17 @@ class AuthProvider extends ChangeNotifier {
     result.fold(
       (failure) {
         _errorMessage = failure is ServerFailure ? failure.message : 'Lỗi không xác định';
-        _setLoginState(ViewState.Error);
+        // rebuild lại UI với trạng thái Error
+        _setLoginState(ViewState.Error);  // để notifyListeners() → widget tự rebuild
         isSuccess = false;
       },
       (_) {
-        _setLoginState(ViewState.Success);
+        // rebuild lại UI với trạng thái Success
+        _setLoginState(ViewState.Success); // Nếu comment lại thì nút login sẽ quay vòng liên tục vì k rebuild UI để cập nhật state
         isSuccess = true;
       },
     );
-    return isSuccess;
+    return isSuccess; // Trả kết quả logic về cho widget hiện tại đang gọi, dùng return isSuccess để biết hành động kế tiếp (ví dụ: chuyển trang, show dialog)
   }
 
   Future<bool> register({

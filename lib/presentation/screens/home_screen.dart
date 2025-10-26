@@ -2,12 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/home_provider.dart';
-import '../widgets/device_card.dart'; // Import widget mới
-import '../widgets/home_header.dart'; // Import widget mới
-import '../widgets/room_tabs.dart'; // Import widget mới
-import '../widgets/home_bottom_nav_bar.dart'; // Import widget mới
+import '../widgets/device_card.dart';
+import '../widgets/home_header.dart';
+import '../widgets/room_tabs.dart';
+import '../widgets/home_bottom_nav_bar.dart';
 
-// --- Bảng màu và Kiểu chữ ---
 const Color kBackgroundColor = Color(0xFFF2F6FC);
 
 class SmartHomeScreen extends StatefulWidget {
@@ -39,25 +38,24 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
               child: Column(
                 children: [
                   const SizedBox(height: 130),
-                  const RoomTabs(), // <-- Widget đã tách
+                  const RoomTabs(),
                   const SizedBox(height: 20),
-                  const Expanded(child: _DeviceGrid()), // Dùng Expanded
+                  const Expanded(child: _DeviceGrid()),
                   const SizedBox(height: 20),
                   _AddDeviceButton(),
                   const SizedBox(height: 20),
                 ],
               ),
             ),
-            const HomeHeader(), // <-- Widget đã tách
+            const HomeHeader(),
           ],
         ),
       ),
-      bottomNavigationBar: const HomeBottomNavBar(), // <-- Widget đã tách
+      bottomNavigationBar: const HomeBottomNavBar(),
     );
   }
 }
 
-// Widget này vẫn giữ lại vì nó phụ thuộc nhiều vào Consumer và logic của màn hình
 class _DeviceGrid extends StatelessWidget {
   const _DeviceGrid();
   @override
@@ -67,6 +65,22 @@ class _DeviceGrid extends StatelessWidget {
         if (provider.state == HomeState.Loading) {
           return const Center(child: CircularProgressIndicator());
         }
+
+        // --- THÊM PHẦN XỬ LÝ LỖI NÀY ---
+        if (provider.state == HomeState.Error) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                "Lỗi: ${provider.errorMessage}.\nPhiên đăng nhập có thể đã hết hạn. Vui lòng thử khởi động lại ứng dụng.",
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red, fontSize: 16),
+              ),
+            ),
+          );
+        }
+        // ---------------------------------
+
         if (provider.selectedRoom == null) {
           return const Center(
               child: Text("Select a room or add a new one.",
@@ -74,7 +88,8 @@ class _DeviceGrid extends StatelessWidget {
         }
         if (provider.selectedRoom!.devices.isEmpty) {
           return const Center(
-              child: Text("No devices in this room.\nPress 'Add Device' to start.",
+              child: Text(
+                  "No devices in this room.\nPress 'Add Device' to start.",
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Color(0xFF6F7EA8))));
         }
@@ -88,7 +103,7 @@ class _DeviceGrid extends StatelessWidget {
           itemCount: provider.selectedRoom!.devices.length,
           itemBuilder: (context, index) {
             final device = provider.selectedRoom!.devices[index];
-            return DeviceCard(device: device); // <-- Widget đã tách
+            return DeviceCard(device: device);
           },
         );
       },

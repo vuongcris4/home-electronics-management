@@ -2,7 +2,10 @@
 // dùng plantuml.com để vẽ flow
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+
+import 'core/api/auth_interceptor.dart';
+import 'core/navigation/navigation_service.dart';
 
 // -------------------- Auth (Domain & Infra) --------------------
 import 'domain/repositories/auth_repository.dart';
@@ -31,11 +34,12 @@ import 'infrastructure/repositories/device_repository_impl.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/home_provider.dart';
 
-//Nhiệm vụ chính của get_it là: quản lý và cung cấp instance của các service (hoặc class) đã được đăng ký từ bên ngoài, 
+//Nhiệm vụ chính của get_it là: quản lý và cung cấp instance của các service (hoặc class) đã được đăng ký từ bên ngoài,
 // để bạn có thể lấy ra inject vào Provider mà không phải khởi tạo thủ công từng nơi.
 
 // Service Locator, đối tượng trung tâm quản lí các dependency (phụ thuộc) trong ứng dụng
 // Nghĩa là bạn có một singleton toàn cục, nơi bạn “đăng ký” và “lấy ra” các đối tượng cần dùng.
+
 final getIt = GetIt.instance;
 
 Future<void> configureDependencies() async {
@@ -46,7 +50,6 @@ Future<void> configureDependencies() async {
       registerUseCase: getIt<RegisterUseCase>(),
     ),
   );
-
 
   getIt.registerFactory<HomeProvider>(
     () => HomeProvider(
@@ -60,65 +63,62 @@ Future<void> configureDependencies() async {
   );
 
   // -------------------- Domain (Use Cases) --------------------
-  // Auth
-  // Câu này đăng ký một singleton (thể hiện duy nhất), nhưng chỉ khởi tạo khi lần đầu tiên được gọi → “lazy”.
-  // getIt.registerLazySingleton<T>(T Function() factoryFunc)
-  // T là kiểu bạn muốn đăng ký (ở đây là LoginUseCase)
-  // getIt<AuthRepository>() có nghĩa là: Lấy instance AuthRepository đã được đăng ký trong getIt từ trước.
-  getIt.registerLazySingleton(() => LoginUseCase(getIt<AuthRepository>()),);
+  getIt.registerLazySingleton(
+    () => LoginUseCase(getIt<AuthRepository>()),
+  );
   getIt.registerLazySingleton(() => RegisterUseCase(getIt<AuthRepository>()));
-
-  // Rooms -> dùng RoomRepository
   getIt.registerLazySingleton(() => GetRoomsUseCase(getIt<RoomRepository>()));
   getIt.registerLazySingleton(() => AddRoomUseCase(getIt<RoomRepository>()));
   getIt.registerLazySingleton(() => DeleteRoomUseCase(getIt<RoomRepository>()));
-
-  // Devices -> dùng DeviceRepository
-  getIt.registerLazySingleton(() => AddDeviceUseCase(getIt<DeviceRepository>()));
-  getIt.registerLazySingleton(() => DeleteDeviceUseCase(getIt<DeviceRepository>()));
+  getIt
+      .registerLazySingleton(() => AddDeviceUseCase(getIt<DeviceRepository>()));
+  getIt.registerLazySingleton(
+      () => DeleteDeviceUseCase(getIt<DeviceRepository>()));
 
   // -------------------- Infrastructure (Repositories) --------------------
-  // Kiểm tra xem LoginUseCase đã được tạo chưa
-  // → nếu chưa → gọi LoginUseCase(getIt<AuthRepository>())
-  // Lấy AuthRepositoryImpl (đã đăng ký dưới interface AuthRepository)
-  // Tạo LoginUseCase với dependency đó
-  // Giữ lại instance này cho các lần gọi sau (singleton).
-  
   getIt.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(
-      remoteDataSource: getIt<AuthRemoteDataSource>(),  // getIt<AuthRemoteDataSource>()
+      remoteDataSource: getIt<AuthRemoteDataSource>(),
       localDataSource: getIt<AuthLocalDataSource>(),
     ),
   );
-
   getIt.registerLazySingleton<RoomRepository>(
     () => RoomRepositoryImpl(remote: getIt<RoomRemoteDataSource>()),
   );
-
   getIt.registerLazySingleton<DeviceRepository>(
     () => DeviceRepositoryImpl(remote: getIt<DeviceRemoteDataSource>()),
   );
 
   // -------------------- Infrastructure (Data Sources) --------------------
-  // Auth Data Sources
+  // Sửa các DataSource để dùng Dio
   getIt.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSourceImpl(client: getIt<http.Client>()),
+    () => AuthRemoteDataSourceImpl(dio: getIt<Dio>()), // SỬA Ở ĐÂY
   );
   getIt.registerLazySingleton<AuthLocalDataSource>(
     () => AuthLocalDataSourceImpl(storage: getIt<FlutterSecureStorage>()),
   );
-
-  // Room Data Source
   getIt.registerLazySingleton<RoomRemoteDataSource>(
-    () => RoomRemoteDataSourceImpl(client: getIt<http.Client>(), storage: getIt<FlutterSecureStorage>()),
+    () => RoomRemoteDataSourceImpl(dio: getIt<Dio>()), // SỬA Ở ĐÂY
   );
-
-  // Device Data Source
   getIt.registerLazySingleton<DeviceRemoteDataSource>(
-    () => DeviceRemoteDataSourceImpl(client: getIt<http.Client>(), storage: getIt<FlutterSecureStorage>()),
+    () => DeviceRemoteDataSourceImpl(dio: getIt<Dio>()), // SỬA Ở ĐÂY
   );
 
-  // -------------------- External --------------------
-  getIt.registerLazySingleton<http.Client>(() => http.Client());
-  getIt.registerLazySingleton<FlutterSecureStorage>(() => const FlutterSecureStorage());
+  // -------------------- Core / External --------------------
+  // Đăng ký NavigationService
+  getIt.registerLazySingleton<NavigationService>(() => NavigationService());
+
+  // Thay http.Client bằng Dio và thêm Interceptor
+  getIt.registerLazySingleton<Dio>(() {
+    final dio = Dio(BaseOptions(
+      baseUrl: "https://mrh3.dongnama.app/api",
+      headers: {'Content-Type': 'application/json; charset=UTF-8'},
+    ));
+    // Thêm interceptor vào Dio instance
+    dio.interceptors.add(AuthInterceptor(dio));
+    return dio;
+  });
+
+  getIt.registerLazySingleton<FlutterSecureStorage>(
+      () => const FlutterSecureStorage());
 }

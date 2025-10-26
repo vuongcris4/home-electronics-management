@@ -1,6 +1,7 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'core/navigation/navigation_service.dart'; // <-- IMPORT
 import 'presentation/providers/home_provider.dart';
 
 import 'presentation/providers/auth_provider.dart';
@@ -31,10 +32,12 @@ class MyApp extends StatelessWidget {
           // Tạo instance của class ChangeNotifier
           // Quản lý vòng đời (dispose tự động)
           // Cho phép context.watch, context.read, Consumer, v.v. trong UI.
+          // đưa instance đó vào cây widget, giúp mọi widget con trong app có thể truy cập AuthProvider qua context.
         ChangeNotifierProvider(create: (_) => di.getIt<AuthProvider>()),
         ChangeNotifierProvider(create: (_) => di.getIt<HomeProvider>()), 
       ],
       child: MaterialApp(
+        navigatorKey: di.getIt<NavigationService>().navigatorKey,
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(

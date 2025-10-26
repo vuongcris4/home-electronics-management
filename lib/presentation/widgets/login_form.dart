@@ -25,7 +25,7 @@ class _LoginFormState extends State<LoginForm> {
   void _login() async {
     // Thêm kiểm tra `mounted` để đảm bảo widget vẫn còn trong cây widget
     if (!mounted) return;
-    
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.login(
       _emailController.text.trim(),
@@ -48,26 +48,60 @@ class _LoginFormState extends State<LoginForm> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AuthProvider>().loginState == ViewState.Loading;
+    // Lúc đầu loginState = Idle → isLoading = false.
+    // Khi gọi login():
+    // loginState đổi sang Loading
+    // notifyListeners() được gọi
+    // 👉 Toàn bộ widget nào có context.watch<AuthProvider>() sẽ rebuild lại.
+    // Khi widget rebuild lại, Flutter chạy lại dòng:
+    // final isLoading = context.watch<AuthProvider>().loginState == ViewState.Loading;
+    // → Lần này isLoading = true.
+    // UI sẽ hiển thị theo trạng thái mới (ví dụ: hiện vòng tròn loading).
+    // Khi login xong, notifyListeners() gọi lại, loginState = Success.
+    // Widget rebuild lại lần nữa → isLoading = false → UI chuyển lại bình thường.
+    final isLoading =
+        context.watch<AuthProvider>().loginState == ViewState.Loading;  // Provider.of<AuthProvider>(context, listen: true)
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildTextField(label: 'Email Address', hint: 'Enter Your Email', controller: _emailController, keyboardType: TextInputType.emailAddress),
+        _buildTextField(
+            label: 'Email Address',
+            hint: 'Enter Your Email',
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress),
         const SizedBox(height: 30),
-        _buildTextField(label: 'Password', hint: 'Enter Your Password', isPassword: true, controller: _passwordController),
+        _buildTextField(
+            label: 'Password',
+            hint: 'Enter Your Password',
+            isPassword: true,
+            controller: _passwordController),
         const SizedBox(height: 60),
         ElevatedButton(
+          // dù k check state trực tiếp, 
+          //nhưng bắt buộc phải rebuild lại ui thì mới update trạng thới được trả về từ provider
           onPressed: isLoading ? null : _login,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF2666DE),
             padding: const EdgeInsets.symmetric(vertical: 19),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
             elevation: 5,
           ),
           child: isLoading
-              ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-              : const Text('Log In', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 20, fontFamily: 'Inter', fontWeight: FontWeight.w600, letterSpacing: 0.14)),
+              ? const SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 3))
+              : const Text('Log In',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.14)),
         ),
       ],
     );
@@ -81,9 +115,15 @@ class _LoginFormState extends State<LoginForm> {
     TextInputType? keyboardType,
   }) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start, // label căn trái
       children: [
-        Text(label, style: const TextStyle(color: Color(0xFF13304A), fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.bold, letterSpacing: 0.06)),
+        Text(label, // Hiển thị tiêu đề nhỏ phía trên
+            style: const TextStyle(
+                color: Color(0xFF13304A),
+                fontSize: 12,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.06)),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
@@ -91,13 +131,24 @@ class _LoginFormState extends State<LoginForm> {
           obscureText: isPassword && !_isPasswordVisible,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: Color(0xFFC4C4C4), fontSize: 20, fontFamily: 'Inter', letterSpacing: 0.10),
-            enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFCFCFCF))),
-            focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF2666DE), width: 2)),
+            hintStyle: const TextStyle(
+                color: Color(0xFFC4C4C4),
+                fontSize: 20,
+                fontFamily: 'Inter',
+                letterSpacing: 0.10),
+            enabledBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFCFCFCF))),
+            focusedBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFF2666DE), width: 2)),
             suffixIcon: isPassword
                 ? IconButton(
-                    icon: Icon(_isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.grey),
-                    onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                    icon: Icon(
+                        _isPasswordVisible
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: Colors.grey),
+                    onPressed: () => setState(
+                        () => _isPasswordVisible = !_isPasswordVisible),
                   )
                 : null,
           ),
