@@ -27,9 +27,10 @@ class HomeBottomNavBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(asset: 'assets/icons/home.png', index: 0, context: context),
-          _buildNavItem(asset: 'assets/icons/document.png', index: 1, context: context),
-          _buildNavItem(asset: 'assets/icons/profile.png', index: 2, context: context),
+          // <-- THAY ĐỔI THỨ TỰ ICON
+          _buildNavItem(asset: 'assets/icons/document.png', index: 0, context: context), // Alerts
+          _buildNavItem(asset: 'assets/icons/home.png', index: 1, context: context),     // Home
+          _buildNavItem(asset: 'assets/icons/profile.png', index: 2, context: context),  // Profile
         ],
       ),
     );

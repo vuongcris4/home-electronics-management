@@ -2,6 +2,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // <-- THÊM MỚI
 
 import 'core/api/auth_interceptor.dart';
 import 'core/navigation/navigation_service.dart';
@@ -10,7 +11,7 @@ import 'core/navigation/navigation_service.dart';
 import 'domain/repositories/auth_repository.dart';
 import 'domain/usecases/login_usecase.dart';
 import 'domain/usecases/register_usecase.dart';
-import 'domain/usecases/get_user_profile_usecase.dart'; // <-- HINZUGEFÜGT
+import 'domain/usecases/get_user_profile_usecase.dart';
 import 'infrastructure/datasources/auth_local_data_source.dart';
 import 'infrastructure/datasources/auth_remote_data_source.dart';
 import 'infrastructure/repositories/auth_repository_impl.dart';
@@ -42,7 +43,7 @@ Future<void> configureDependencies() async {
     () => AuthProvider(
       loginUseCase: getIt<LoginUseCase>(),
       registerUseCase: getIt<RegisterUseCase>(),
-      getUserProfileUseCase: getIt<GetUserProfileUseCase>(), // <-- HINZUGEFÜGT
+      getUserProfileUseCase: getIt<GetUserProfileUseCase>(),
     ),
   );
 
@@ -54,6 +55,7 @@ Future<void> configureDependencies() async {
       addDeviceUseCase: getIt<AddDeviceUseCase>(),
       deleteDeviceUseCase: getIt<DeleteDeviceUseCase>(),
       storage: getIt<FlutterSecureStorage>(),
+      sharedPreferences: getIt<SharedPreferences>(), // <-- CẬP NHẬT
     ),
   );
 
@@ -63,7 +65,7 @@ Future<void> configureDependencies() async {
   );
   getIt.registerLazySingleton(() => RegisterUseCase(getIt<AuthRepository>()));
   getIt.registerLazySingleton(
-      () => GetUserProfileUseCase(getIt<AuthRepository>())); // <-- HINZUGEFÜGT
+      () => GetUserProfileUseCase(getIt<AuthRepository>()));
   getIt.registerLazySingleton(() => GetRoomsUseCase(getIt<RoomRepository>()));
   getIt.registerLazySingleton(() => AddRoomUseCase(getIt<RoomRepository>()));
   getIt.registerLazySingleton(() => DeleteRoomUseCase(getIt<RoomRepository>()));
@@ -101,6 +103,10 @@ Future<void> configureDependencies() async {
   );
 
   // -------------------- Core / External --------------------
+  // <-- THÊM MỚI: Khởi tạo và đăng ký SharedPreferences
+  final sharedPreferences = await SharedPreferences.getInstance();
+  getIt.registerLazySingleton(() => sharedPreferences);
+
   getIt.registerLazySingleton<NavigationService>(() => NavigationService());
 
   getIt.registerLazySingleton<Dio>(() {

@@ -6,7 +6,8 @@ import '../widgets/device_card.dart';
 import '../widgets/home_header.dart';
 import '../widgets/room_tabs.dart';
 import '../widgets/home_bottom_nav_bar.dart';
-import './account.dart'; // Import the account screen
+import './alerts_screen.dart'; // <-- 1. IMPORT ALERTS SCREEN
+import './account.dart'; 
 
 const Color kBackgroundColor = Color(0xFFF2F6FC);
 
@@ -18,7 +19,7 @@ class SmartHomeScreen extends StatefulWidget {
 }
 
 class _SmartHomeScreenState extends State<SmartHomeScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1; // <-- 2. ĐẶT MÀN HÌNH MẶC ĐỊNH LÀ HOME (INDEX 1)
 
   @override
   void initState() {
@@ -29,16 +30,11 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
     });
   }
 
-  // List of the main pages in the app
+  // <-- 3. CẬP NHẬT DANH SÁCH MÀN HÌNH
   static const List<Widget> _pages = <Widget>[
-    _HomeScreenContent(), // Index 0: The main home screen with devices
-    Center(
-      child: Text(
-        "Stats Screen (Placeholder)",
-        style: TextStyle(fontSize: 18, color: Colors.grey),
-      ),
-    ), // Index 1: A placeholder for a future stats screen
-    ProfileScreen(),      // Index 2: The user's account screen
+    AlertsScreen(),       // Index 0: Màn hình cảnh báo
+    _HomeScreenContent(), // Index 1: Màn hình chính với các thiết bị
+    ProfileScreen(),      // Index 2: Màn hình tài khoản
   ];
 
   void _onItemTapped(int index) {
@@ -51,12 +47,12 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBackgroundColor,
-      // Display the selected page from the _pages list
+      // Hiển thị màn hình được chọn từ danh sách _pages
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
       ),
-      // Use the updated bottom navigation bar
+      // Sử dụng bottom navigation bar đã cập nhật
       bottomNavigationBar: HomeBottomNavBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

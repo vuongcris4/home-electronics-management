@@ -52,41 +52,11 @@ class RoomTabs extends StatelessWidget {
             ),
             IconButton(
               icon: Image.asset('assets/icons/add.png', width: 24, height: 24),
-              onPressed: () => _showAddRoomDialog(context),
+              onPressed: () => Navigator.pushNamed(context, '/add-room'),
             ),
           ],
         );
       },
-    );
-  }
-
-  void _showAddRoomDialog(BuildContext context) {
-    final TextEditingController controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Add New Room'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(hintText: "E.g., Living Room"),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                Provider.of<HomeProvider>(context, listen: false)
-                    .addNewRoom(controller.text.trim());
-                Navigator.pop(dialogContext);
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
     );
   }
 

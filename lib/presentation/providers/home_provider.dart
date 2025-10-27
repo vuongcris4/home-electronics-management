@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // <-- THÊM MỚI
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../core/error/failures.dart';
@@ -15,6 +16,35 @@ import '../../domain/usecases/add_room_usecase.dart';
 import '../../domain/usecases/delete_device_usecase.dart';
 import '../../domain/usecases/delete_room_usecase.dart';
 
+// --- CẬP NHẬT: Định nghĩa cấu trúc cho Log và Cảnh báo ---
+enum AlertType { info, warning }
+
+class AlertLog {
+  final String message;
+  final DateTime timestamp;
+  final AlertType type;
+
+  AlertLog({
+    required this.message,
+    required this.timestamp,
+    required this.type,
+  });
+
+  // Chuyển đổi AlertLog sang Map để lưu dưới dạng JSON
+  Map<String, dynamic> toJson() => {
+        'message': message,
+        'timestamp': timestamp.toIso8601String(),
+        'type': type.name,
+      };
+
+  // Tạo AlertLog từ Map (dữ liệu đọc từ JSON)
+  factory AlertLog.fromJson(Map<String, dynamic> json) => AlertLog(
+        message: json['message'],
+        timestamp: DateTime.parse(json['timestamp']),
+        type: AlertType.values.firstWhere((e) => e.name == json['type']),
+      );
+}
+
 enum HomeState { Initial, Loading, Loaded, Error }
 
 class HomeProvider extends ChangeNotifier {
@@ -24,6 +54,7 @@ class HomeProvider extends ChangeNotifier {
   final AddDeviceUseCase addDeviceUseCase;
   final DeleteDeviceUseCase deleteDeviceUseCase;
   final FlutterSecureStorage storage;
+  final SharedPreferences sharedPreferences; // <-- THÊM MỚI
 
   HomeProvider({
     required this.getRoomsUseCase,
@@ -32,7 +63,10 @@ class HomeProvider extends ChangeNotifier {
     required this.addDeviceUseCase,
     required this.deleteDeviceUseCase,
     required this.storage,
-  });
+    required this.sharedPreferences, // <-- THÊM MỚI
+  }) {
+    _loadAlerts(); // <-- THÊM MỚI: Tải logs đã lưu khi provider được khởi tạo
+  }
 
   HomeState _state = HomeState.Initial;
   HomeState get state => _state;
@@ -43,10 +77,9 @@ class HomeProvider extends ChangeNotifier {
   int _selectedRoomIndex = -1;
   int get selectedRoomIndex => _selectedRoomIndex;
 
-  Room? get selectedRoom =>
-      (_selectedRoomIndex >= 0 && _rooms.isNotEmpty)
-          ? _rooms[_selectedRoomIndex]
-          : null;
+  Room? get selectedRoom => (_selectedRoomIndex >= 0 && _rooms.isNotEmpty)
+      ? _rooms[_selectedRoomIndex]
+      : null;
 
   String _errorMessage = '';
   String get errorMessage => _errorMessage;
@@ -56,6 +89,43 @@ class HomeProvider extends ChangeNotifier {
 
   WebSocketChannel? _channel;
   StreamSubscription? _channelSubscription;
+
+  List<AlertLog> _alerts = [];
+  List<AlertLog> get alerts => _alerts;
+
+  // --- THÊM MỚI: Key để lưu/đọc từ SharedPreferences ---
+  static const _alertsKey = 'alert_logs';
+
+  // --- THÊM MỚI: Lưu danh sách log vào SharedPreferences ---
+  Future<void> _saveAlerts() async {
+    // Chuyển đổi List<AlertLog> thành List<String> (mỗi string là một JSON object)
+    final List<String> alertJsonList =
+        _alerts.map((alert) => jsonEncode(alert.toJson())).toList();
+    await sharedPreferences.setStringList(_alertsKey, alertJsonList);
+  }
+
+  // --- THÊM MỚI: Tải danh sách log từ SharedPreferences ---
+  void _loadAlerts() {
+    final List<String>? alertJsonList =
+        sharedPreferences.getStringList(_alertsKey);
+    if (alertJsonList != null) {
+      _alerts = alertJsonList
+          .map((alertJson) => AlertLog.fromJson(jsonDecode(alertJson)))
+          .toList();
+    }
+  }
+
+  // --- CẬP NHẬT: Phương thức _addLog giờ sẽ lưu lại log ---
+  void _addLog(String message, AlertType type) {
+    // Thêm vào đầu danh sách để hiển thị log mới nhất lên trên
+    _alerts.insert(
+        0, AlertLog(message: message, timestamp: DateTime.now(), type: type));
+    // Giới hạn số lượng log để tránh tốn bộ nhớ
+    if (_alerts.length > 50) {
+      _alerts.removeLast();
+    }
+    _saveAlerts(); // <-- THÊM MỚI: Lưu lại mỗi khi có log mới
+  }
 
   Future<void> fetchRooms() async {
     _state = HomeState.Loading;
@@ -158,6 +228,29 @@ class HomeProvider extends ChangeNotifier {
       final currentDevice = _rooms[roomIndex].devices[deviceIndex];
       Device updatedDevice;
 
+      // Logic ghi log khi trạng thái on/off thay đổi
+      final bool? newIsOn = attributes['is_on'] as bool?;
+      if (newIsOn != null && newIsOn != currentDevice.isOn) {
+        final roomName = _rooms[roomIndex].name;
+        _addLog(
+          '${currentDevice.name} in "$roomName" was turned ${newIsOn ? 'ON' : 'OFF'}.',
+          AlertType.info,
+        );
+      }
+
+      // Logic tạo cảnh báo khi độ sáng > 90
+      if (currentDevice is DimmableLightDevice) {
+        final int? newBrightness = attributes['brightness'] as int?;
+        if (newBrightness != null && newBrightness > 90) {
+          final roomName = _rooms[roomIndex].name;
+          _addLog(
+            'Warning: ${currentDevice.name} in "$roomName" brightness is at $newBrightness% (above 90% threshold).',
+            AlertType.warning,
+          );
+        }
+      }
+
+      // Logic cập nhật trạng thái thiết bị (giữ nguyên)
       if (currentDevice is DimmableLightDevice) {
         updatedDevice = currentDevice.copyWith(
           isOn: attributes['is_on'] as bool? ?? currentDevice.isOn,

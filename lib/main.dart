@@ -6,8 +6,9 @@ import 'domain/entities/device.dart';
 import 'presentation/providers/home_provider.dart';
 
 import 'presentation/providers/auth_provider.dart';
-import 'presentation/screens/add_device_screen.dart'; // <-- 1. IMPORT
-import 'presentation/screens/control_screen.dart'; // <-- 2. IMPORT
+import 'presentation/screens/add_device_screen.dart';
+import 'presentation/screens/add_room_screen.dart'; // <-- 1. IMPORT
+import 'presentation/screens/control_screen.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/login_screen.dart';
 import 'presentation/screens/sign_up_screen.dart';
@@ -49,8 +50,8 @@ class MyApp extends StatelessWidget {
           '/signup': (context) => const SignUpScreen(),
           '/signup-success': (context) => const SignUpSuccessScreen(),
           '/home': (context) => const SmartHomeScreen(),
-          // --- 3. ADD NEW ROUTES ---
           '/add-device': (context) => const AddDeviceScreen(),
+          '/add-room': (context) => const AddRoomScreen(), // <-- 2. ADD ROUTE
           '/control-device': (context) {
             // Lấy device object được truyền qua arguments
             final device =
