@@ -1,18 +1,16 @@
 // lib/presentation/screens/control_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sleek_circular_slider/sleek_circular_slider.dart'; // <-- 1. IMPORT PACKAGE MỚI
+import 'package:sleek_circular_slider/sleek_circular_slider.dart';
 
 import '../../domain/entities/device.dart';
 import '../providers/home_provider.dart';
 
-// --- Các hằng số màu sắc ---
 const Color kBackgroundColor = Color(0xFFF2F6FC);
 const Color kPrimaryColor = Color(0xFF2666DE);
 const Color kTextColorPrimary = Color(0xFF07123C);
 const Color kTextColorSecondary = Color(0xFF6F7EA8);
 
-/// Màn hình điều khiển cho một thiết bị cụ thể.
 class ControlScreen extends StatefulWidget {
   final Device device;
 
@@ -25,10 +23,8 @@ class ControlScreen extends StatefulWidget {
 class _ControlScreenState extends State<ControlScreen> {
   @override
   Widget build(BuildContext context) {
-    // Dùng Consumer để lắng nghe thay đổi trạng thái từ HomeProvider
     return Consumer<HomeProvider>(
       builder: (context, provider, child) {
-        // Lấy trạng thái mới nhất của thiết bị từ provider để đảm bảo UI luôn được cập nhật real-time
         final device = provider.findDeviceById(widget.device.id) ?? widget.device;
 
         return Scaffold(
@@ -36,10 +32,9 @@ class _ControlScreenState extends State<ControlScreen> {
           body: SafeArea(
             child: Stack(
               children: [
-                // Phần nội dung chính
                 Column(
                   children: [
-                    const SizedBox(height: 140), // Khoảng trống cho header
+                    const SizedBox(height: 140),
                     Expanded(
                       child: Container(
                         width: double.infinity,
@@ -50,7 +45,6 @@ class _ControlScreenState extends State<ControlScreen> {
                             topRight: Radius.circular(32),
                           ),
                         ),
-                        // Hiển thị widget điều khiển tương ứng với loại thiết bị
                         child: device is DimmableLightDevice
                             ? _DimmableLightControls(device: device)
                             : _BinarySwitchControls(device: device),
@@ -58,7 +52,6 @@ class _ControlScreenState extends State<ControlScreen> {
                     ),
                   ],
                 ),
-                // Header nằm đè lên trên
                 _Header(device: device),
               ],
             ),
@@ -69,19 +62,18 @@ class _ControlScreenState extends State<ControlScreen> {
   }
 }
 
-
-// --- WIDGET HEADER ---
 class _Header extends StatelessWidget {
   final Device device;
   const _Header({required this.device});
 
-  // Hàm hiển thị dialog xác nhận xóa
+  // ===================== MODIFIED METHOD =====================
   void _showDeleteConfirmation(BuildContext context, HomeProvider provider) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Device?'),
-        content: Text("Are you sure you want to delete '${device.name}'? This action cannot be undone."),
+        content: Text(
+            "Are you sure you want to delete '${device.name}'? This action cannot be undone."),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
@@ -90,10 +82,25 @@ class _Header extends StatelessWidget {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              Navigator.pop(dialogContext);
+              Navigator.pop(dialogContext); // Close dialog first
               final success = await provider.removeDevice(device.id);
-              if (success && context.mounted) {
-                Navigator.pop(context); // Quay lại màn hình home sau khi xóa
+              if (context.mounted) {
+                if (success) {
+                  ScaffoldMessenger.of(context)
+                    ..removeCurrentSnackBar()
+                    ..showSnackBar(const SnackBar(
+                      content: Text('Device deleted successfully.'),
+                      backgroundColor: Colors.green,
+                    ));
+                  Navigator.pop(context); // Go back to home screen
+                } else {
+                  ScaffoldMessenger.of(context)
+                    ..removeCurrentSnackBar()
+                    ..showSnackBar(SnackBar(
+                      content: Text('Error: ${provider.errorMessage}'),
+                      backgroundColor: Colors.red,
+                    ));
+                }
               }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.white)),
@@ -102,6 +109,7 @@ class _Header extends StatelessWidget {
       ),
     );
   }
+  // ===================== END OF MODIFIED METHOD =====================
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +142,6 @@ class _Header extends StatelessWidget {
   }
 }
 
-// --- BỘ ĐIỀU KHIỂN CHO ĐÈN ĐIỀU CHỈNH ĐỘ SÁNG (ĐÃ SỬA) ---
 class _DimmableLightControls extends StatelessWidget {
   final DimmableLightDevice device;
   const _DimmableLightControls({required this.device});
@@ -219,21 +226,18 @@ class _DimmableLightControls extends StatelessWidget {
   }
 }
 
-// --- BỘ ĐIỀU KHIỂN CHO CÔNG TẮC THƯỜNG (ĐÃ SỬA) ---
 class _BinarySwitchControls extends StatelessWidget {
   final Device device;
   const _BinarySwitchControls({required this.device});
 
   @override
   Widget build(BuildContext context) {
-    // Bọc trong Center để đảm bảo nút bấm luôn ở giữa
     return Center(
       child: _PowerControlButton(device: device),
     );
   }
 }
 
-// --- NÚT NGUỒN ON/OFF CHUNG ---
 class _PowerControlButton extends StatelessWidget {
   final Device device;
   const _PowerControlButton({required this.device});

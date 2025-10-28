@@ -1,9 +1,9 @@
 // lib/presentation/providers/auth_provider.dart
 import 'package:flutter/material.dart';
 import '../../core/error/failures.dart';
-import '../../core/usecase/usecase.dart'; // <-- HINZUGEFÜGT
-import '../../domain/entities/user.dart'; // <-- HINZUGEFÜGT
-import '../../domain/usecases/get_user_profile_usecase.dart'; // <-- HINZUGEFÜGT
+import '../../core/usecase/usecase.dart';
+import '../../domain/entities/user.dart';
+import '../../domain/usecases/get_user_profile_usecase.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
 
@@ -12,12 +12,12 @@ enum ViewState { Idle, Loading, Success, Error }
 class AuthProvider extends ChangeNotifier {
   final LoginUseCase loginUseCase;
   final RegisterUseCase registerUseCase;
-  final GetUserProfileUseCase getUserProfileUseCase; // <-- HINZUGEFÜGT
+  final GetUserProfileUseCase getUserProfileUseCase;
 
   AuthProvider({
     required this.loginUseCase,
     required this.registerUseCase,
-    required this.getUserProfileUseCase, // <-- HINZUGEFÜGT
+    required this.getUserProfileUseCase,
   });
 
   ViewState _loginState = ViewState.Idle;
@@ -26,14 +26,26 @@ class AuthProvider extends ChangeNotifier {
   ViewState _registerState = ViewState.Idle;
   ViewState get registerState => _registerState;
 
-  ViewState _profileState = ViewState.Idle; // <-- HINZUGEFÜGT
-  ViewState get profileState => _profileState; // <-- HINZUGEFÜGT
+  ViewState _profileState = ViewState.Idle;
+  ViewState get profileState => _profileState;
 
   String _errorMessage = '';
   String get errorMessage => _errorMessage;
 
-  User? _user; // <-- HINZUGEFÜGT
-  User? get user => _user; // <-- HINZUGEFÜGT
+  User? _user;
+  User? get user => _user;
+
+  // ===================== NEW METHOD =====================
+  /// Clears user data and resets the state, typically on logout.
+  void clearUserData() {
+    _user = null;
+    _profileState = ViewState.Idle;
+    _loginState = ViewState.Idle;
+    _registerState = ViewState.Idle;
+    _errorMessage = '';
+    notifyListeners();
+  }
+  // ===================== END OF NEW METHOD =====================
 
   void _setLoginState(ViewState state) {
     _loginState = state;
@@ -46,7 +58,6 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void _setProfileState(ViewState state) {
-    // <-- HINZUGEFÜGT
     _profileState = state;
     notifyListeners();
   }
@@ -106,9 +117,8 @@ class AuthProvider extends ChangeNotifier {
     return isSuccess;
   }
 
-  // --- DIESE METHODE HINZUFÜGEN ---
   Future<void> fetchUserProfile() async {
-    // Verhindern Sie das Abrufen, wenn bereits geladen wird oder geladen ist
+    // Prevent fetching if already loading or user data exists
     if (_profileState == ViewState.Loading || _user != null) return;
 
     _setProfileState(ViewState.Loading);

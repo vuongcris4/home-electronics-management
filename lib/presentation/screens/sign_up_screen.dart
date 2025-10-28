@@ -1,6 +1,6 @@
 // lib/presentation/screens/sign_up_screen.dart
 import 'package:flutter/material.dart';
-import '../widgets/sign_up_form.dart'; // Import widget mới
+import '../widgets/sign_up_form.dart';
 
 class SignUpScreen extends StatelessWidget {
   const SignUpScreen({super.key});
@@ -29,7 +29,7 @@ class SignUpScreen extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: Column(
             children: [
-              SizedBox(height: screenSize.height * 0.0821),
+              SizedBox(height: screenSize.height * 0.04), // Reduced from 0.0821
               const Text('Create Account',
                   style: TextStyle(
                       color: Color(0xFF13304A),
@@ -48,10 +48,9 @@ class SignUpScreen extends StatelessWidget {
                       color: Color(0xFFC4C4C4),
                       letterSpacing: 0.06,
                       height: 1.5)),
-              SizedBox(height: screenSize.height * 0.0654),
+              SizedBox(height: screenSize.height * 0.05), // Reduced from 0.0654
               
-              // Sử dụng form widget đã tách
-              const SignUpForm(), 
+              const SignUpForm(),
               
               const SizedBox(height: 40),
             ],

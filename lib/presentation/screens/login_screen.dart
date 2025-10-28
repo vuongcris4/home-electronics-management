@@ -1,8 +1,6 @@
 // lib/presentation/screens/login_screen.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
-import '../widgets/login_form.dart'; // <-- Widget Form mới
+import '../widgets/login_form.dart';
 import '../widgets/or_divider.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -15,21 +13,18 @@ class LoginScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        // Widget này đảm bảo rằng nội dung bên trong nó sẽ không bị che khuất bởi tai thỏ (notch), thanh trạng thái, hoặc các góc bo tròn của màn hình điện thoại.
         child: SingleChildScrollView(
-          // Nó bao bọc toàn bộ nội dung, cho phép người dùng cuộn màn hình nếu nội dung dài hơn chiều cao của thiết bị. Điều này rất quan trọng để tránh lỗi "overflow" (tràn pixel) khi bàn phím ảo hiện lên.
           child: Container(
             constraints: BoxConstraints(
-                minHeight:
-                    screenHeight), // thiết lập chiều cao tối thiểu bằng chiều cao màn hình.
+              minHeight: screenHeight - MediaQuery.of(context).padding.top,
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 35.0),
             child: Column(
-              mainAxisAlignment:
-                  MainAxisAlignment.center, // căn giữa widget con trong column
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                const SizedBox(height: 60),
-                const Text('Log in',  // Chữ Log in
+                const SizedBox(height: 40),
+                const Text('Log in',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         color: Color(0xFF13304A),
@@ -38,16 +33,16 @@ class LoginScreen extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.19)),
                 const SizedBox(height: 12),
-                const Text('Hi! Welcome', // Chữ Hi! Welcome
+                const Text('Hi! Welcome',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         color: Color(0xFFC4C4C4),
                         fontSize: 22,
                         fontFamily: 'Poppins',
                         letterSpacing: 0.11)),
-                const SizedBox(height: 80),
+                const SizedBox(height: 60), // Reduced from 80
 
-                const LoginForm(), // <-- Sử dụng widget form đã tách
+                const LoginForm(),
 
                 const SizedBox(height: 20),
                 ElevatedButton(
@@ -60,8 +55,7 @@ class LoginScreen extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(32)),
                         elevation: 5),
-                    child:
-                        const Column(mainAxisSize: MainAxisSize.min, children: [
+                    child: const Column(mainAxisSize: MainAxisSize.min, children: [
                       Text('Don’t have an account ?',
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -77,8 +71,8 @@ class LoginScreen extends StatelessWidget {
                               fontFamily: 'Poppins',
                               fontWeight: FontWeight.bold))
                     ])),
-                const SizedBox(height: 60),
-                const OrDivider(), // <-- Sử dụng widget đã tách
+                const SizedBox(height: 40), // Reduced from 60
+                const OrDivider(),
                 const SizedBox(height: 30),
                 Align(
                     alignment: Alignment.center,

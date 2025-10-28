@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // <-- THÊM MỚI
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../core/error/failures.dart';
@@ -16,7 +16,6 @@ import '../../domain/usecases/add_room_usecase.dart';
 import '../../domain/usecases/delete_device_usecase.dart';
 import '../../domain/usecases/delete_room_usecase.dart';
 
-// --- CẬP NHẬT: Định nghĩa cấu trúc cho Log và Cảnh báo ---
 enum AlertType { info, warning }
 
 class AlertLog {
@@ -30,14 +29,12 @@ class AlertLog {
     required this.type,
   });
 
-  // Chuyển đổi AlertLog sang Map để lưu dưới dạng JSON
   Map<String, dynamic> toJson() => {
         'message': message,
         'timestamp': timestamp.toIso8601String(),
         'type': type.name,
       };
 
-  // Tạo AlertLog từ Map (dữ liệu đọc từ JSON)
   factory AlertLog.fromJson(Map<String, dynamic> json) => AlertLog(
         message: json['message'],
         timestamp: DateTime.parse(json['timestamp']),
@@ -54,7 +51,7 @@ class HomeProvider extends ChangeNotifier {
   final AddDeviceUseCase addDeviceUseCase;
   final DeleteDeviceUseCase deleteDeviceUseCase;
   final FlutterSecureStorage storage;
-  final SharedPreferences sharedPreferences; // <-- THÊM MỚI
+  final SharedPreferences sharedPreferences;
 
   HomeProvider({
     required this.getRoomsUseCase,
@@ -63,9 +60,9 @@ class HomeProvider extends ChangeNotifier {
     required this.addDeviceUseCase,
     required this.deleteDeviceUseCase,
     required this.storage,
-    required this.sharedPreferences, // <-- THÊM MỚI
+    required this.sharedPreferences,
   }) {
-    _loadAlerts(); // <-- THÊM MỚI: Tải logs đã lưu khi provider được khởi tạo
+    _loadAlerts();
   }
 
   HomeState _state = HomeState.Initial;
@@ -77,9 +74,10 @@ class HomeProvider extends ChangeNotifier {
   int _selectedRoomIndex = -1;
   int get selectedRoomIndex => _selectedRoomIndex;
 
-  Room? get selectedRoom => (_selectedRoomIndex >= 0 && _rooms.isNotEmpty)
-      ? _rooms[_selectedRoomIndex]
-      : null;
+  Room? get selectedRoom =>
+      (_selectedRoomIndex >= 0 && _rooms.isNotEmpty)
+          ? _rooms[_selectedRoomIndex]
+          : null;
 
   String _errorMessage = '';
   String get errorMessage => _errorMessage;
@@ -93,18 +91,32 @@ class HomeProvider extends ChangeNotifier {
   List<AlertLog> _alerts = [];
   List<AlertLog> get alerts => _alerts;
 
-  // --- THÊM MỚI: Key để lưu/đọc từ SharedPreferences ---
   static const _alertsKey = 'alert_logs';
 
-  // --- THÊM MỚI: Lưu danh sách log vào SharedPreferences ---
+  // ===================== NEW METHOD =====================
+  /// Clears all local data (rooms, alerts, WebSocket) and resets state.
+  /// Should be called on logout.
+  Future<void> clearLocalData() async {
+    _channelSubscription?.cancel();
+    _channel?.sink.close();
+    _channel = null;
+    _rooms.clear();
+    _alerts.clear();
+    _selectedRoomIndex = -1;
+    _state = HomeState.Initial;
+    _errorMessage = '';
+    // Clear persisted alerts from storage
+    await sharedPreferences.remove(_alertsKey);
+    notifyListeners();
+  }
+  // ===================== END OF NEW METHOD =====================
+
   Future<void> _saveAlerts() async {
-    // Chuyển đổi List<AlertLog> thành List<String> (mỗi string là một JSON object)
     final List<String> alertJsonList =
         _alerts.map((alert) => jsonEncode(alert.toJson())).toList();
     await sharedPreferences.setStringList(_alertsKey, alertJsonList);
   }
 
-  // --- THÊM MỚI: Tải danh sách log từ SharedPreferences ---
   void _loadAlerts() {
     final List<String>? alertJsonList =
         sharedPreferences.getStringList(_alertsKey);
@@ -115,16 +127,13 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
-  // --- CẬP NHẬT: Phương thức _addLog giờ sẽ lưu lại log ---
   void _addLog(String message, AlertType type) {
-    // Thêm vào đầu danh sách để hiển thị log mới nhất lên trên
     _alerts.insert(
         0, AlertLog(message: message, timestamp: DateTime.now(), type: type));
-    // Giới hạn số lượng log để tránh tốn bộ nhớ
     if (_alerts.length > 50) {
       _alerts.removeLast();
     }
-    _saveAlerts(); // <-- THÊM MỚI: Lưu lại mỗi khi có log mới
+    _saveAlerts();
   }
 
   Future<void> fetchRooms() async {
@@ -216,70 +225,75 @@ class HomeProvider extends ChangeNotifier {
     updateDeviceState(deviceId, {'is_on': newStatus});
   }
 
+  // ===================== MODIFIED METHOD =====================
+  /// Updates the state of a device across all rooms, not just the selected one.
   void _updateDeviceStateLocally(
       int deviceId, Map<String, dynamic> attributes) {
-    if (selectedRoom == null) return;
-    final roomIndex = _rooms.indexWhere((room) => room.id == selectedRoom!.id);
-    if (roomIndex == -1) return;
+    for (int roomIndex = 0; roomIndex < _rooms.length; roomIndex++) {
+      final deviceIndex =
+          _rooms[roomIndex].devices.indexWhere((d) => d.id == deviceId);
 
-    final deviceIndex =
-        _rooms[roomIndex].devices.indexWhere((d) => d.id == deviceId);
-    if (deviceIndex != -1) {
-      final currentDevice = _rooms[roomIndex].devices[deviceIndex];
-      Device updatedDevice;
+      if (deviceIndex != -1) {
+        final currentDevice = _rooms[roomIndex].devices[deviceIndex];
+        Device updatedDevice;
 
-      // Logic ghi log khi trạng thái on/off thay đổi
-      final bool? newIsOn = attributes['is_on'] as bool?;
-      if (newIsOn != null && newIsOn != currentDevice.isOn) {
-        final roomName = _rooms[roomIndex].name;
-        _addLog(
-          '${currentDevice.name} in "$roomName" was turned ${newIsOn ? 'ON' : 'OFF'}.',
-          AlertType.info,
-        );
-      }
-
-      // Logic tạo cảnh báo khi độ sáng > 90
-      if (currentDevice is DimmableLightDevice) {
-        final int? newBrightness = attributes['brightness'] as int?;
-        if (newBrightness != null && newBrightness > 90) {
+        final bool? newIsOn = attributes['is_on'] as bool?;
+        if (newIsOn != null && newIsOn != currentDevice.isOn) {
           final roomName = _rooms[roomIndex].name;
           _addLog(
-            'Warning: ${currentDevice.name} in "$roomName" brightness is at $newBrightness% (above 90% threshold).',
-            AlertType.warning,
+            '${currentDevice.name} in "$roomName" was turned ${newIsOn ? 'ON' : 'OFF'}.',
+            AlertType.info,
           );
         }
+
+        if (currentDevice is DimmableLightDevice) {
+          final int? newBrightness = attributes['brightness'] as int?;
+          if (newBrightness != null && newBrightness > 90) {
+            final roomName = _rooms[roomIndex].name;
+            _addLog(
+              'Warning: ${currentDevice.name} in "$roomName" brightness is at $newBrightness% (above 90% threshold).',
+              AlertType.warning,
+            );
+          }
+        }
+
+        if (currentDevice is DimmableLightDevice) {
+          updatedDevice = currentDevice.copyWith(
+            isOn: attributes['is_on'] as bool? ?? currentDevice.isOn,
+            brightness:
+                attributes['brightness'] as int? ?? currentDevice.brightness,
+          );
+        } else {
+          updatedDevice = currentDevice.copyWith(
+            isOn: attributes['is_on'] as bool? ?? currentDevice.isOn,
+          );
+        }
+
+        final newDevices = List<Device>.from(_rooms[roomIndex].devices);
+        newDevices[deviceIndex] = updatedDevice;
+
+        _rooms[roomIndex] = Room(
+            id: _rooms[roomIndex].id,
+            name: _rooms[roomIndex].name,
+            devices: newDevices);
+            
+        // Found and updated the device, no need to continue looping.
+        break; 
       }
-
-      // Logic cập nhật trạng thái thiết bị (giữ nguyên)
-      if (currentDevice is DimmableLightDevice) {
-        updatedDevice = currentDevice.copyWith(
-          isOn: attributes['is_on'] as bool? ?? currentDevice.isOn,
-          brightness:
-              attributes['brightness'] as int? ?? currentDevice.brightness,
-        );
-      } else {
-        updatedDevice = currentDevice.copyWith(
-          isOn: attributes['is_on'] as bool? ?? currentDevice.isOn,
-        );
-      }
-
-      final newDevices = List<Device>.from(_rooms[roomIndex].devices);
-      newDevices[deviceIndex] = updatedDevice;
-
-      _rooms[roomIndex] = Room(
-          id: _rooms[roomIndex].id,
-          name: _rooms[roomIndex].name,
-          devices: newDevices);
-
-      notifyListeners();
     }
+    notifyListeners();
   }
+  // ===================== END OF MODIFIED METHOD =====================
 
   Device? findDeviceById(int deviceId) {
     try {
       for (final room in _rooms) {
-        final device = room.devices.firstWhere((d) => d.id == deviceId);
-        return device;
+        // Use firstWhereOrNull to avoid exceptions if not found
+        final device = room.devices.cast<Device?>().firstWhere(
+              (d) => d?.id == deviceId,
+              orElse: () => null,
+            );
+        if (device != null) return device;
       }
       return null;
     } catch (e) {
@@ -347,7 +361,7 @@ class HomeProvider extends ChangeNotifier {
     String name,
     String subtitle,
     String iconAsset,
-    DeviceType deviceType, // <-- MODIFIED
+    DeviceType deviceType,
   ) async {
     if (selectedRoom == null) return false;
 
@@ -359,7 +373,7 @@ class HomeProvider extends ChangeNotifier {
         subtitle: subtitle,
         iconAsset: iconAsset,
         roomId: selectedRoom!.id,
-        deviceType: deviceType); // <-- MODIFIED
+        deviceType: deviceType);
     final result = await addDeviceUseCase(params);
     _isLoadingAction = false;
 
@@ -388,8 +402,6 @@ class HomeProvider extends ChangeNotifier {
   }
 
   Future<bool> removeDevice(int deviceId) async {
-    if (selectedRoom == null) return false;
-
     _isLoadingAction = true;
     notifyListeners();
     final result =
@@ -403,8 +415,10 @@ class HomeProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }, (_) {
-      final roomIndex =
-          _rooms.indexWhere((room) => room.id == selectedRoom!.id);
+      // Find the room containing the device and remove it
+      final roomIndex = _rooms.indexWhere(
+          (room) => room.devices.any((device) => device.id == deviceId));
+
       if (roomIndex != -1) {
         final updatedDevices = List<Device>.from(_rooms[roomIndex].devices)
           ..removeWhere((d) => d.id == deviceId);

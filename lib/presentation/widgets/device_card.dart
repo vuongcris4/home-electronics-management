@@ -26,7 +26,6 @@ class DeviceCard extends StatelessWidget {
     final Color iconColor = isActive ? Colors.white : kPrimaryColor;
 
     return GestureDetector(
-      // --- 1. ADD ONTAP HANDLER ---
       onTap: () {
         Navigator.pushNamed(context, '/control-device', arguments: device);
       },
@@ -53,12 +52,11 @@ class DeviceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Image.asset(
-                  device.iconAsset, // Use dynamic icon asset
+                  device.iconAsset,
                   width: 32,
                   height: 32,
                   color: iconColor,
-                   errorBuilder: (context, error, stackTrace) {
-                    // Fallback icon in case of error
+                  errorBuilder: (context, error, stackTrace) {
                     return Icon(Icons.error, color: iconColor, size: 32);
                   },
                 ),
@@ -102,6 +100,7 @@ class DeviceCard extends StatelessWidget {
     );
   }
 
+  // ===================== MODIFIED METHOD =====================
   void _showDeleteDeviceConfirmation(BuildContext context, Device device) {
     showDialog(
       context: context,
@@ -114,10 +113,25 @@ class DeviceCard extends StatelessWidget {
               child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              Provider.of<HomeProvider>(context, listen: false)
-                  .removeDevice(device.id);
-              Navigator.pop(dialogContext);
+            onPressed: () async {
+              Navigator.pop(dialogContext); // Close dialog first
+              final provider = Provider.of<HomeProvider>(context, listen: false);
+              final success = await provider.removeDevice(device.id);
+
+              if (context.mounted) {
+                  ScaffoldMessenger.of(context).removeCurrentSnackBar();
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Device deleted successfully.'),
+                      backgroundColor: Colors.green,
+                    ));
+                  } else {
+                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Error deleting device: ${provider.errorMessage}'),
+                      backgroundColor: Colors.red,
+                    ));
+                  }
+              }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
@@ -125,4 +139,5 @@ class DeviceCard extends StatelessWidget {
       ),
     );
   }
+  // ===================== END OF MODIFIED METHOD =====================
 }

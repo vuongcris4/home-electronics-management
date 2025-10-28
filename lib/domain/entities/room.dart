@@ -23,54 +23,16 @@ class Room extends Equatable {
     );
   }
 
+  // ===================== NEW METHOD =====================
+  Room copyWith({String? name, List<Device>? devices}) {
+    return Room(
+      id: id,
+      name: name ?? this.name,
+      devices: devices ?? this.devices,
+    );
+  }
+  // ===================== END OF NEW METHOD =====================
+
   @override
   List<Object?> get props => [id, name, devices];
 }
-
-// [
-//   {
-//     "id": 1,
-//     "name": "Phòng khách",
-//     "devices": [
-//       {
-//         "id": 101,
-//         "name": "Đèn chùm",
-//         "subtitle": "Philips Hue",
-//         "icon_asset": "assets/icons/chandelier.png",
-//         "is_on": true
-//       },
-//       {
-//         "id": 102,
-//         "name": "Smart TV",
-//         "subtitle": "Samsung 55 inch",
-//         "icon_asset": "assets/icons/tv.png",
-//         "is_on": false
-//       }
-//     ]
-//   },
-//   {
-//     "id": 2,
-//     "name": "Phòng ngủ",
-//     "devices": [
-//       {
-//         "id": 201,
-//         "name": "Máy lạnh",
-//         "subtitle": "Daikin Inverter",
-//         "icon_asset": "assets/icons/air_conditioner.png",
-//         "is_on": true
-//       },
-//       {
-//         "id": 202,
-//         "name": "Đèn ngủ",
-//         "subtitle": null,
-//         "icon_asset": "assets/icons/lamp.png",
-//         "is_on": false
-//       }
-//     ]
-//   },
-//   {
-//     "id": 3,
-//     "name": "Nhà bếp",
-//     "devices": []
-//   }
-// ]

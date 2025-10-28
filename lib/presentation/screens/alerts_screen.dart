@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../injection_container.dart';
+import '../providers/auth_provider.dart';
 import '../providers/home_provider.dart';
 
 const Color kPrimaryColor = Color(0xFF2666DE);
@@ -11,8 +12,14 @@ const Color kPrimaryColor = Color(0xFF2666DE);
 class AlertsScreen extends StatelessWidget {
   const AlertsScreen({super.key});
 
-  /// Xử lý đăng xuất bằng cách xóa token và điều hướng về màn hình đăng nhập.
+  // ===================== MODIFIED METHOD =====================
+  /// Handles user logout by clearing all local data, tokens, and navigating to the login screen.
   Future<void> _logout(BuildContext context) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+    authProvider.clearUserData();
+    await homeProvider.clearLocalData();
+
     final storage = getIt<FlutterSecureStorage>();
     await storage.delete(key: 'access_token');
     await storage.delete(key: 'refresh_token');
@@ -21,8 +28,9 @@ class AlertsScreen extends StatelessWidget {
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     }
   }
+  // ===================== END OF MODIFIED METHOD =====================
 
-  /// Widget để xây dựng mỗi thẻ log/cảnh báo.
+  /// Widget to build each log/alert card.
   Widget _buildAlertCard(AlertLog alert) {
     final bool isWarning = alert.type == AlertType.warning;
     final Color cardColor = isWarning ? Colors.orange.shade50 : Colors.white;
@@ -75,7 +83,6 @@ class AlertsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Lấy ngày hiện tại và định dạng
     final String currentDate =
         DateFormat('MMMM d, yyyy').format(DateTime.now());
 
@@ -84,9 +91,7 @@ class AlertsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ========================================================
           // HEADER
-          // ========================================================
           Container(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
             decoration: BoxDecoration(
@@ -111,7 +116,7 @@ class AlertsScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      currentDate,
+                      currentDate, // Dynamic date
                       style:
                           const TextStyle(fontSize: 14, color: Colors.black54),
                     ),
@@ -140,10 +145,6 @@ class AlertsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-
-          // ========================================================
-          // TIÊU ĐỀ "ACTIVITY LOG"
-          // ========================================================
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.0),
             child: Center(
@@ -158,10 +159,7 @@ class AlertsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-
-          // ========================================================
-          // DANH SÁCH LOGS VÀ CẢNH BÁO
-          // ========================================================
+          // LIST OF LOGS AND ALERTS
           Expanded(
             child: Consumer<HomeProvider>(
               builder: (context, provider, child) {
