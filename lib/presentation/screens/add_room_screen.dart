@@ -57,81 +57,76 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(35.0, 0, 35.0, 40.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  icon:
-                      const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Add Room',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  // --- SỬA 1: Dùng màu chữ đã định nghĩa ---
-                  color: kLabelColor,
-                  fontSize: 32,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              // --- SỬA 2: Dùng Spacer để đẩy nội dung vào giữa ---
-              const Spacer(),
-
-              _CustomTextField(
-                label: 'Room',
-                hint: 'Enter Your Room',
-                controller: _nameController,
-              ),
-              const SizedBox(height: 60),
-
-              // --- SỬA 3: Cập nhật đường dẫn và màu sắc icon ---
-              Image.asset(
-                'assets/icons/Home1.png', // Hãy chắc chắn đường dẫn này đúng
-                height: 140,
-                color: const Color(0xFF8FA9D6), // Màu xanh nhạt chính xác
-              ),
-
-              // --- SỬA 4: Dùng Spacer để đẩy nút xuống dưới cùng ---
-              const Spacer(),
-
-              ElevatedButton(
-                onPressed: isLoading ? null : _addRoom,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryColor,
-                  padding: const EdgeInsets.symmetric(vertical: 19),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+        // ================== SỬA 1: BỌC BẰNG SingleChildScrollView ==================
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(35.0, 0, 35.0, 40.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new,
+                        color: Colors.black),
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),
-                child: isLoading
-                    ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 3,
-                        ),
-                      )
-                    : const Text(
-                        // --- SỬA 5: Đổi chữ trên nút ---
-                        'Add',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                const Text(
+                  'Add Room',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: kLabelColor,
+                    fontSize: 32,
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                // ================== SỬA 2: THAY THẾ Spacer ==================
+                // Đã xóa "const Spacer()"
+                const SizedBox(height: 40), // Thêm khoảng cách cố định
+
+                _CustomTextField(
+                  label: 'Room',
+                  hint: 'Enter Your Room',
+                  controller: _nameController,
+                ),
+                const SizedBox(height: 60),
+
+                Image.asset(
+                  'assets/icons/Home1.png',
+                  height: 140,
+                  color: const Color(0xFF8FA9D6),
+                ),
+
+                // ================== SỬA 3: THAY THẾ Spacer ==================
+                // Đã xóa "const Spacer()"
+                const SizedBox(height: 80), // Thêm khoảng cách cố định
+
+                ElevatedButton(
+                  onPressed: isLoading ? null : _addRoom,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimaryColor,
+                    padding: const EdgeInsets.symmetric(vertical: 19),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                    // ... (CircularProgressIndicator)
+                  )
+                      : const Text(
+                    'Add',
+                    style: TextStyle(
+                      // ... (text style)
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

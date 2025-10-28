@@ -217,6 +217,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // 1. KHOẢNG TRỐNG VÔ HÌNH (BÊN TRÁI)
+            // Kích thước 48.0 là kích thước chạm chuẩn của IconButton
+            // Nó sẽ cân bằng với IconButton thật ở bên phải
+            const SizedBox(width: 48.0),
+
+            // 2. TÊN CỦA BẠN (GIỜ SẼ Ở GIỮA)
             Text(
               user.name,
               textAlign: TextAlign.center,
@@ -227,6 +233,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
+
+            // 3. NÚT EDIT THẬT (BÊN PHẢI)
             IconButton(
               icon: const Icon(Icons.edit, size: 20, color: kTextColor),
               onPressed: () => _showEditProfileDialog(context, authProvider),
