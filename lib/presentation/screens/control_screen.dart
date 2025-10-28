@@ -66,7 +66,6 @@ class _Header extends StatelessWidget {
   final Device device;
   const _Header({required this.device});
 
-  // ===================== MODIFIED METHOD =====================
   void _showDeleteConfirmation(BuildContext context, HomeProvider provider) {
     showDialog(
       context: context,
@@ -109,7 +108,64 @@ class _Header extends StatelessWidget {
       ),
     );
   }
-  // ===================== END OF MODIFIED METHOD =====================
+
+  // ===================== THÊM MỚI =====================
+  void _showEditDeviceDialog(BuildContext context, HomeProvider provider) {
+    final nameController = TextEditingController(text: device.name);
+    final subtitleController = TextEditingController(text: device.subtitle);
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text('Edit Device'),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Device Name'),
+                    validator: (value) =>
+                        value!.isEmpty ? 'Name cannot be empty' : null,
+                  ),
+                  TextFormField(
+                    controller: subtitleController,
+                    decoration: const InputDecoration(labelText: 'Subtitle / Note'),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: () async {
+                  if (formKey.currentState!.validate()) {
+                    final success = await provider.updateDeviceDetails(
+                        device.id,
+                        nameController.text,
+                        subtitleController.text);
+
+                    if (dialogContext.mounted) Navigator.pop(dialogContext);
+                    
+                    if (!success && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('Update failed: ${provider.errorMessage}'),
+                          backgroundColor: Colors.red));
+                    }
+                  }
+                },
+                child: const Text('Save'),
+              )
+            ],
+          );
+        });
+  }
+  // ===================== KẾT THÚC =====================
 
   @override
   Widget build(BuildContext context) {
@@ -123,24 +179,38 @@ class _Header extends StatelessWidget {
             icon: const Icon(Icons.arrow_back_ios_new, color: kTextColorPrimary),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          Text(
-            device.name,
-            style: const TextStyle(
-              color: kTextColorPrimary,
-              fontSize: 20,
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w500,
+          Expanded(
+            child: Text(
+              device.name,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: kTextColorPrimary,
+                fontSize: 20,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w500,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: kPrimaryColor, size: 28),
-            onPressed: () => _showDeleteConfirmation(context, provider),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, color: kPrimaryColor, size: 28),
+                onPressed: () => _showEditDeviceDialog(context, provider),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.red, size: 28),
+                onPressed: () => _showDeleteConfirmation(context, provider),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 }
+
+// ... Các widget _DimmableLightControls, _BinarySwitchControls, _PowerControlButton không thay đổi ...
 
 class _DimmableLightControls extends StatelessWidget {
   final DimmableLightDevice device;

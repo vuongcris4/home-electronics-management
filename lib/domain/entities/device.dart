@@ -1,3 +1,4 @@
+// lib/domain/entities/device.dart
 import 'package:equatable/equatable.dart';
 
 enum DeviceType {
@@ -23,17 +24,16 @@ abstract class Device extends Equatable {
     required this.type,
   });
 
-  // ===================== THAY ĐỔI Ở ĐÂY =====================
   factory Device.fromJson(Map<String, dynamic> json) {
     // Thêm dòng print này để kiểm tra dữ liệu JSON nhận được từ server
-    print('[DEBUG] Parsing Device JSON: $json'); 
+    print('[DEBUG] Parsing Device JSON: $json');
 
     final deviceTypeStr = json['device_type'] as String?;
-    
+
     final deviceType = DeviceType.values.firstWhere(
       (e) => e.name == deviceTypeStr,
       // Nếu không có `device_type` trong JSON, nó sẽ mặc định là công tắc thường
-      orElse: () => DeviceType.binarySwitch,  
+      orElse: () => DeviceType.binarySwitch,
     );
 
     switch (deviceType) {
@@ -44,9 +44,14 @@ abstract class Device extends Equatable {
         return BinarySwitchDevice.fromJson(json);
     }
   }
-  // ===================== KẾT THÚC THAY ĐỔI =====================
 
-  Device copyWith({bool? isOn});
+  // ===================== THAY ĐỔI Ở ĐÂY =====================
+  Device copyWith({
+    String? name,
+    String? subtitle,
+    bool? isOn,
+  });
+  // ===================== KẾT THÚC THAY ĐỔI =====================
 
   @override
   List<Object?> get props => [id, name, subtitle, iconAsset, isOn, type];
@@ -71,16 +76,22 @@ class BinarySwitchDevice extends Device {
     );
   }
 
+  // ===================== THAY ĐỔI Ở ĐÂY =====================
   @override
-  Device copyWith({bool? isOn}) {
+  Device copyWith({
+    String? name,
+    String? subtitle,
+    bool? isOn,
+  }) {
     return BinarySwitchDevice(
       id: id,
-      name: name,
-      subtitle: subtitle,
+      name: name ?? this.name,
+      subtitle: subtitle ?? this.subtitle,
       iconAsset: iconAsset,
       isOn: isOn ?? this.isOn,
     );
   }
+  // ===================== KẾT THÚC THAY ĐỔI =====================
 }
 
 class DimmableLightDevice extends Device {
@@ -107,16 +118,24 @@ class DimmableLightDevice extends Device {
     );
   }
 
-  Device copyWith({bool? isOn, int? brightness}) {
+  // ===================== THAY ĐỔI Ở ĐÂY =====================
+  @override
+  Device copyWith({
+    String? name,
+    String? subtitle,
+    bool? isOn,
+    int? brightness,
+  }) {
     return DimmableLightDevice(
       id: id,
-      name: name,
-      subtitle: subtitle,
+      name: name ?? this.name,
+      subtitle: subtitle ?? this.subtitle,
       iconAsset: iconAsset,
       isOn: isOn ?? this.isOn,
       brightness: brightness ?? this.brightness,
     );
   }
+  // ===================== KẾT THÚC THAY ĐỔI =====================
 
   @override
   List<Object?> get props => super.props..add(brightness);

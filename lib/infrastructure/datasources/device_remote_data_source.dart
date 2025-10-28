@@ -9,9 +9,16 @@ abstract class DeviceRemoteDataSource {
     String subtitle,
     String iconAsset,
     int roomId,
-    DeviceType deviceType, // <-- ADDED
+    DeviceType deviceType,
   );
   Future<void> deleteDevice(int deviceId);
+  // ===================== THÊM MỚI =====================
+  Future<Device> updateDevice(
+    int deviceId,
+    String name,
+    String subtitle,
+  );
+  // ===================== KẾT THÚC =====================
 }
 
 class DeviceRemoteDataSourceImpl implements DeviceRemoteDataSource {
@@ -25,7 +32,7 @@ class DeviceRemoteDataSourceImpl implements DeviceRemoteDataSource {
     String subtitle,
     String iconAsset,
     int roomId,
-    DeviceType deviceType, // <-- ADDED
+    DeviceType deviceType,
   ) async {
     try {
       final res = await dio.post(
@@ -35,7 +42,7 @@ class DeviceRemoteDataSourceImpl implements DeviceRemoteDataSource {
           'subtitle': subtitle,
           'icon_asset': iconAsset,
           'room': roomId,
-          'device_type': deviceType.name, // <-- ADDED: Send type to API
+          'device_type': deviceType.name,
         },
       );
       return Device.fromJson(res.data);
@@ -55,4 +62,23 @@ class DeviceRemoteDataSourceImpl implements DeviceRemoteDataSource {
       throw ServerException("Failed to delete device");
     }
   }
+
+  // ===================== THÊM MỚI =====================
+  @override
+  Future<Device> updateDevice(
+      int deviceId, String name, String subtitle) async {
+    try {
+      final res = await dio.put(
+        '/devices/$deviceId/',
+        data: {
+          'name': name,
+          'subtitle': subtitle,
+        },
+      );
+      return Device.fromJson(res.data);
+    } on DioException catch (e) {
+      throw ServerException(e.response?.data['detail'] ?? "Failed to update device");
+    }
+  }
+  // ===================== KẾT THÚC =====================
 }

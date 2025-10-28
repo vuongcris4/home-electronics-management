@@ -1,3 +1,4 @@
+// lib/infrastructure/repositories/room_repository_impl.dart
 import 'package:dartz/dartz.dart';
 import '../../core/error/exceptions.dart';
 import '../../core/error/failures.dart';
@@ -39,4 +40,16 @@ class RoomRepositoryImpl implements RoomRepository {
       return Left(ServerFailure(e.message));
     }
   }
+
+  // ===================== THÊM MỚI =====================
+  @override
+  Future<Either<Failure, Room>> updateRoom(int roomId, String name) async {
+    try {
+      final room = await remote.updateRoom(roomId, name);
+      return Right(room);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    }
+  }
+  // ===================== KẾT THÚC =====================
 }

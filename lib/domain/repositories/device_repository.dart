@@ -10,8 +10,16 @@ abstract class DeviceRepository {
     String subtitle,
     String iconAsset,
     int roomId,
-    DeviceType deviceType, // <-- ADDED
+    DeviceType deviceType,
   );
   // xoá device
   Future<Either<Failure, Unit>> deleteDevice(int deviceId);
+
+  // ===================== THÊM MỚI =====================
+  Future<Either<Failure, Device>> updateDevice(
+    int deviceId,
+    String name,
+    String subtitle,
+  );
+  // ===================== KẾT THÚC =====================
 }

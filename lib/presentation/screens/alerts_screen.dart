@@ -145,19 +145,30 @@ class AlertsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.0),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Center(
-              child: Text(
-                'Activity Log',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF6F7EA8),
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center, 
+                children: [
+                  const Text(
+                    'Activity Log',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF6F7EA8),
+                    ),
+                  ),
+                  const SizedBox(width: 8), 
+                  Image.asset(
+                    'assets/icons/notific.png',
+                    width: 24,
+                    height: 24,
+                  )
+                ],
               ),
             ),
-          ),
+        ),
           const SizedBox(height: 20),
           // LIST OF LOGS AND ALERTS
           Expanded(

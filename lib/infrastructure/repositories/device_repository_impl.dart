@@ -16,7 +16,7 @@ class DeviceRepositoryImpl implements DeviceRepository {
     String subtitle,
     String iconAsset,
     int roomId,
-    DeviceType deviceType, // <-- ADDED
+    DeviceType deviceType,
   ) async {
     try {
       final dev =
@@ -36,4 +36,17 @@ class DeviceRepositoryImpl implements DeviceRepository {
       return Left(ServerFailure(e.message));
     }
   }
+
+  // ===================== THÊM MỚI =====================
+  @override
+  Future<Either<Failure, Device>> updateDevice(
+      int deviceId, String name, String subtitle) async {
+    try {
+      final device = await remote.updateDevice(deviceId, name, subtitle);
+      return Right(device);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    }
+  }
+  // ===================== KẾT THÚC =====================
 }

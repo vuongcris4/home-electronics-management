@@ -16,6 +16,12 @@ abstract class AuthRepository {
     required String phoneNumber,
   });
 
-  Future<Either<Failure, User>> getUserProfile(); 
+  Future<Either<Failure, User>> getUserProfile();
 
+  // ===================== THÊM MỚI =====================
+  Future<Either<Failure, User>> updateUserProfile({
+    required String name,
+    required String phoneNumber,
+  });
+  // ===================== KẾT THÚC =====================
 }

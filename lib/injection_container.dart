@@ -2,7 +2,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // <-- THÊM MỚI
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/api/auth_interceptor.dart';
 import 'core/navigation/navigation_service.dart';
@@ -12,6 +12,7 @@ import 'domain/repositories/auth_repository.dart';
 import 'domain/usecases/login_usecase.dart';
 import 'domain/usecases/register_usecase.dart';
 import 'domain/usecases/get_user_profile_usecase.dart';
+import 'domain/usecases/update_user_profile_usecase.dart'; // <-- THÊM MỚI
 import 'infrastructure/datasources/auth_local_data_source.dart';
 import 'infrastructure/datasources/auth_remote_data_source.dart';
 import 'infrastructure/repositories/auth_repository_impl.dart';
@@ -21,6 +22,7 @@ import 'domain/repositories/room_repository.dart';
 import 'domain/usecases/get_rooms_usecase.dart';
 import 'domain/usecases/add_room_usecase.dart';
 import 'domain/usecases/delete_room_usecase.dart';
+import 'domain/usecases/update_room_usecase.dart'; // <-- THÊM MỚI
 import 'infrastructure/datasources/room_remote_data_source.dart';
 import 'infrastructure/repositories/room_repository_impl.dart';
 
@@ -28,6 +30,7 @@ import 'infrastructure/repositories/room_repository_impl.dart';
 import 'domain/repositories/device_repository.dart';
 import 'domain/usecases/add_device_usecase.dart';
 import 'domain/usecases/delete_device_usecase.dart';
+import 'domain/usecases/update_device_usecase.dart'; // <-- THÊM MỚI
 import 'infrastructure/datasources/device_remote_data_source.dart';
 import 'infrastructure/repositories/device_repository_impl.dart';
 
@@ -44,6 +47,7 @@ Future<void> configureDependencies() async {
       loginUseCase: getIt<LoginUseCase>(),
       registerUseCase: getIt<RegisterUseCase>(),
       getUserProfileUseCase: getIt<GetUserProfileUseCase>(),
+      updateUserProfileUseCase: getIt<UpdateUserProfileUseCase>(), // <-- CẬP NHẬT
     ),
   );
 
@@ -52,27 +56,29 @@ Future<void> configureDependencies() async {
       getRoomsUseCase: getIt<GetRoomsUseCase>(),
       addRoomUseCase: getIt<AddRoomUseCase>(),
       deleteRoomUseCase: getIt<DeleteRoomUseCase>(),
+      updateRoomUseCase: getIt<UpdateRoomUseCase>(), // <-- CẬP NHẬT
       addDeviceUseCase: getIt<AddDeviceUseCase>(),
       deleteDeviceUseCase: getIt<DeleteDeviceUseCase>(),
+      updateDeviceUseCase: getIt<UpdateDeviceUseCase>(), // <-- CẬP NHẬT
       storage: getIt<FlutterSecureStorage>(),
-      sharedPreferences: getIt<SharedPreferences>(), // <-- CẬP NHẬT
+      sharedPreferences: getIt<SharedPreferences>(),
     ),
   );
 
   // -------------------- Domain (Use Cases) --------------------
-  getIt.registerLazySingleton(
-    () => LoginUseCase(getIt<AuthRepository>()),
-  );
+  getIt.registerLazySingleton(() => LoginUseCase(getIt<AuthRepository>()));
   getIt.registerLazySingleton(() => RegisterUseCase(getIt<AuthRepository>()));
-  getIt.registerLazySingleton(
-      () => GetUserProfileUseCase(getIt<AuthRepository>()));
+  getIt.registerLazySingleton(() => GetUserProfileUseCase(getIt<AuthRepository>()));
+  getIt.registerLazySingleton(() => UpdateUserProfileUseCase(getIt<AuthRepository>())); // <-- THÊM MỚI
+
   getIt.registerLazySingleton(() => GetRoomsUseCase(getIt<RoomRepository>()));
   getIt.registerLazySingleton(() => AddRoomUseCase(getIt<RoomRepository>()));
   getIt.registerLazySingleton(() => DeleteRoomUseCase(getIt<RoomRepository>()));
-  getIt
-      .registerLazySingleton(() => AddDeviceUseCase(getIt<DeviceRepository>()));
-  getIt.registerLazySingleton(
-      () => DeleteDeviceUseCase(getIt<DeviceRepository>()));
+  getIt.registerLazySingleton(() => UpdateRoomUseCase(getIt<RoomRepository>())); // <-- THÊM MỚI
+
+  getIt.registerLazySingleton(() => AddDeviceUseCase(getIt<DeviceRepository>()));
+  getIt.registerLazySingleton(() => DeleteDeviceUseCase(getIt<DeviceRepository>()));
+  getIt.registerLazySingleton(() => UpdateDeviceUseCase(getIt<DeviceRepository>())); // <-- THÊM MỚI
 
   // -------------------- Infrastructure (Repositories) --------------------
   getIt.registerLazySingleton<AuthRepository>(
@@ -103,7 +109,6 @@ Future<void> configureDependencies() async {
   );
 
   // -------------------- Core / External --------------------
-  // <-- THÊM MỚI: Khởi tạo và đăng ký SharedPreferences
   final sharedPreferences = await SharedPreferences.getInstance();
   getIt.registerLazySingleton(() => sharedPreferences);
 

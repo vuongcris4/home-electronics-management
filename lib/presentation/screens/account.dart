@@ -2,8 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
+import '../../domain/entities/user.dart';
 import '../../injection_container.dart';
-import '../providers/auth_provider.dart'; // <-- GEÄNDERT
+import '../providers/auth_provider.dart';
 import '../providers/home_provider.dart';
 
 // ==========================================================
@@ -15,7 +16,7 @@ const Color kTextColor = Color(0xFF6F7EA8);
 const Color kCardColor = Colors.white;
 
 // ==========================================================
-// MAIN WIDGET: ProfileScreen (JETZT STATEFUL)
+// MAIN WIDGET: ProfileScreen
 // ==========================================================
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -28,35 +29,108 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    // Benutzerprofildaten abrufen, wenn der Bildschirm initialisiert wird
+    // Lấy dữ liệu profile khi màn hình được khởi tạo
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AuthProvider>(context, listen: false).fetchUserProfile();
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      // Chỉ fetch nếu chưa có dữ liệu user
+      if (authProvider.user == null) {
+        authProvider.fetchUserProfile();
+      }
     });
   }
 
-  /// Handles user logout by clearing stored tokens and navigating to the login screen.
+  /// Xử lý đăng xuất
   Future<void> _logout(BuildContext context) async {
     final storage = getIt<FlutterSecureStorage>();
     await storage.delete(key: 'access_token');
     await storage.delete(key: 'refresh_token');
 
     if (context.mounted) {
+      // Xóa dữ liệu state trong các provider
+      Provider.of<AuthProvider>(context, listen: false).clearUserData();
+      await Provider.of<HomeProvider>(context, listen: false).clearLocalData();
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     }
   }
 
+  // ===================== THÊM MỚI =====================
+  /// Hiển thị dialog để sửa thông tin profile
+  void _showEditProfileDialog(BuildContext context, AuthProvider authProvider) {
+    final nameController = TextEditingController(text: authProvider.user?.name);
+    final phoneController =
+        TextEditingController(text: authProvider.user?.phoneNumber);
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Edit Profile'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Full Name'),
+                  validator: (value) =>
+                      value!.isEmpty ? 'Name cannot be empty' : null,
+                ),
+                TextFormField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(labelText: 'Phone Number'),
+                  validator: (value) =>
+                      value!.isEmpty ? 'Phone cannot be empty' : null,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (formKey.currentState!.validate()) {
+                  final success = await authProvider.updateProfile(
+                    name: nameController.text,
+                    phoneNumber: phoneController.text,
+                  );
+                  if (dialogContext.mounted) {
+                    Navigator.pop(dialogContext);
+                    if (!success) {
+                       ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Update failed: ${authProvider.errorMessage}')),
+                      );
+                    }
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  // ===================== KẾT THÚC =====================
+
   @override
   Widget build(BuildContext context) {
-    // Verwenden Sie verschachtelte Consumer, um Daten von beiden Providern abzurufen
     return Consumer<HomeProvider>(
       builder: (context, homeProvider, child) {
-        // Raum- und Gerätedaten von HomeProvider berechnen
-        final totalRooms = homeProvider.rooms.length;
+        // Tính toán số liệu từ HomeProvider
         final totalDevices = homeProvider.rooms
             .fold<int>(0, (sum, room) => sum + room.devices.length);
+        final devicesOn = homeProvider.rooms.fold<int>(
+            0,
+            (sum, room) =>
+                sum + room.devices.where((d) => d.isOn).length);
+        final devicesOff = totalDevices - devicesOn;
 
         return Consumer<AuthProvider>(
-          // Benutzerdaten von AuthProvider abrufen
           builder: (context, authProvider, child) {
             final user = authProvider.user;
             final profileState = authProvider.profileState;
@@ -67,9 +141,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 bottom: false,
                 child: Column(
                   children: [
-                    // ========================================================
                     // HEADER: Logout Button
-                    // ========================================================
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                       child: Row(
@@ -89,52 +161,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
 
-                    // ========================================================
-                    // AVATAR UND NAME (AKTUALISIERT)
-                    // ========================================================
+                    // AVATAR
                     const SizedBox(height: 20),
                     _buildAvatar(),
                     const SizedBox(height: 15),
 
-                    // Lade-, Erfolgs- oder Fehlerzustand für Benutzerinformationen anzeigen
+                    // Tên và Email
                     if (profileState == ViewState.Loading)
                       const CircularProgressIndicator(),
                     if (profileState == ViewState.Success && user != null)
-                      Column(
-                        children: [
-                          Text(
-                            user.name, // Benutzername anzeigen
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Color(0xFF6F7EA8),
-                              fontSize: 22,
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            user.email, // Benutzer-E-Mail anzeigen
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Color(0xFF9DB2CE),
-                              fontSize: 14,
-                              fontFamily: 'Inter',
-                            ),
-                          ),
-                        ],
-                      ),
+                      _buildUserInfo(user, authProvider),
                     if (profileState == ViewState.Error)
-                      const Text(
-                        "Failed to load profile",
-                        style: TextStyle(color: Colors.red),
-                      ),
+                      const Text("Failed to load profile",
+                          style: TextStyle(color: Colors.red)),
 
                     const SizedBox(height: 30),
 
-                    // ========================================================
+                    // ===================== THAY ĐỔI Ở ĐÂY =====================
                     // INFO CARDS GRID
-                    // ========================================================
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 25.0),
@@ -144,14 +188,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           mainAxisSpacing: 20,
                           physics: const NeverScrollableScrollPhysics(),
                           children: [
-                            _buildInfoCard(totalDevices.toString(), 'Devices'),
-                            _buildInfoCard(totalRooms.toString(), 'Rooms'),
-                            _buildInfoCard('93 kWh', 'Electricty usage'),
-                            _buildInfoCard('1', 'Alerts'),
+                            _buildInfoCard(
+                                devicesOn.toString(), 'Devices On'),
+                            _buildInfoCard(
+                                devicesOff.toString(), 'Devices Off'),
+                            _buildInfoCard(
+                                homeProvider.rooms.length.toString(), 'Rooms'),
+                            _buildInfoCard(totalDevices.toString(), 'Total Devices'),
                           ],
                         ),
                       ),
                     ),
+                    // ===================== KẾT THÚC THAY ĐỔI =====================
                   ],
                 ),
               ),
@@ -162,9 +210,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ==========================================================
-  // HELPER WIDGETS (UNVERÄNDERT)
-  // ==========================================================
+  // Widget hiển thị thông tin người dùng và nút edit
+  Widget _buildUserInfo(User user, AuthProvider authProvider) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              user.name,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFF6F7EA8),
+                fontSize: 22,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.edit, size: 20, color: kTextColor),
+              onPressed: () => _showEditProfileDialog(context, authProvider),
+            )
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          user.email,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Color(0xFF9DB2CE),
+            fontSize: 14,
+            fontFamily: 'Inter',
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Các helper widget không đổi
   Widget _buildInfoCard(String value, String label) {
     return Container(
       decoration: ShapeDecoration(
@@ -226,47 +309,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             shape: OvalBorder(),
           ),
         ),
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 32.54,
-              height: 32.54,
-              decoration: const ShapeDecoration(
-                color: Colors.white,
-                shape: OvalBorder(),
-              ),
-            ),
-            const SizedBox(height: 4.96),
-            Container(
-              width: 49.64,
-              height: 18.75,
-              decoration: const ShapeDecoration(
-                color: Colors.white,
-                shape: OvalBorder(),
-              ),
-            ),
-          ],
-        ),
-        Positioned(
-          right: 0,
-          bottom: 0,
-          child: Container(
-            width: 29.78,
-            height: 29.78,
-            decoration: const ShapeDecoration(
-              color: Color(0xFFE5EAF0),
-              shape: OvalBorder(
-                side: BorderSide(width: 1.10, color: Colors.white),
-              ),
-            ),
-            child: const Icon(
-              Icons.camera_alt_outlined,
-              size: 16,
-              color: kTextColor,
-            ),
-          ),
-        ),
+        // Placeholder for avatar image
       ],
     );
   }

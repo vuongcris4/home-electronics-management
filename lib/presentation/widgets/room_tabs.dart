@@ -1,6 +1,7 @@
 // lib/presentation/widgets/room_tabs.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../domain/entities/room.dart';
 import '../providers/home_provider.dart';
 
 const Color kPrimaryColor = Color(0xFF2666DE);
@@ -35,13 +36,18 @@ class RoomTabs extends StatelessWidget {
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: List.generate(provider.rooms.length, (index) {
+                          final room = provider.rooms[index];
                           return Padding(
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 12.0),
                             child: GestureDetector(
                               onTap: () => provider.selectRoom(index),
+                              // ===================== THÊM MỚI =====================
+                              onLongPress: () =>
+                                  _showEditRoomDialog(context, room),
+                              // ===================== KẾT THÚC =====================
                               child: _RoomTabItem(
-                                text: provider.rooms[index].name,
+                                text: room.name,
                                 isActive: provider.selectedRoomIndex == index,
                               ),
                             ),
@@ -60,23 +66,45 @@ class RoomTabs extends StatelessWidget {
     );
   }
 
+  // ===================== CẬP NHẬT =====================
   void _showDeleteRoomConfirmation(BuildContext context) {
     final provider = Provider.of<HomeProvider>(context, listen: false);
+
+    // KIỂM TRA NẾU PHÒNG CÓ THIẾT BỊ
+    if (provider.selectedRoom!.devices.isNotEmpty) {
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Cannot Delete Room'),
+          content: const Text(
+              'This room contains devices. Please remove all devices from this room before deleting it.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return; // Dừng hàm tại đây
+    }
+
+    // Nếu không có thiết bị, hiển thị dialog xác nhận xóa
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Room?'),
         content: Text(
-            "Are you sure you want to delete '${provider.selectedRoom!.name}' and all its devices? This action cannot be undone."),
+            "Are you sure you want to delete '${provider.selectedRoom!.name}'? This action cannot be undone."),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              provider.removeSelectedRoom();
-              Navigator.pop(dialogContext);
+            onPressed: () async {
+               Navigator.pop(dialogContext); // Đóng dialog trước
+               await provider.removeSelectedRoom();
             },
             child: const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
@@ -84,6 +112,49 @@ class RoomTabs extends StatelessWidget {
       ),
     );
   }
+  // ===================== KẾT THÚC CẬP NHẬT =====================
+
+  // ===================== THÊM MỚI =====================
+  void _showEditRoomDialog(BuildContext context, Room room) {
+    final nameController = TextEditingController(text: room.name);
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit Room Name'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: nameController,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'Room Name'),
+            validator: (value) =>
+                value!.isEmpty ? 'Name cannot be empty' : null,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (formKey.currentState!.validate()) {
+                final provider = Provider.of<HomeProvider>(context, listen: false);
+                await provider.updateRoomName(room.id, nameController.text);
+                if (dialogContext.mounted) {
+                   Navigator.pop(dialogContext);
+                }
+              }
+            },
+            child: const Text('Save'),
+          )
+        ],
+      ),
+    );
+  }
+  // ===================== KẾT THÚC =====================
 }
 
 class _RoomTabItem extends StatelessWidget {

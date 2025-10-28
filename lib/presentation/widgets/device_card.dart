@@ -57,6 +57,22 @@ class DeviceCard extends StatelessWidget {
                   height: 32,
                   color: iconColor,
                   errorBuilder: (context, error, stackTrace) {
+                    // ===================== GHI CHÚ QUAN TRỌNG =====================
+                    // Nếu bạn thấy icon dấu chấm than (!), có nghĩa là Flutter
+                    // không tìm thấy file ảnh tại đường dẫn `device.iconAsset`.
+                    //
+                    // Vui lòng kiểm tra 2 điều sau:
+                    // 1. Trong file `pubspec.yaml`, bạn ĐÃ khai báo thư mục assets:
+                    //
+                    // flutter:
+                    //   assets:
+                    //     - assets/icons/
+                    //     - assets/img/
+                    //
+                    // 2. Thư mục `assets/icons/` thật sự tồn tại trong dự án của bạn
+                    //    và chứa các file icon (vd: 'lightbulb.png').
+                    // =============================================================
+                    print("Error loading asset: ${device.iconAsset} - $error");
                     return Icon(Icons.error, color: iconColor, size: 32);
                   },
                 ),
@@ -100,7 +116,6 @@ class DeviceCard extends StatelessWidget {
     );
   }
 
-  // ===================== MODIFIED METHOD =====================
   void _showDeleteDeviceConfirmation(BuildContext context, Device device) {
     showDialog(
       context: context,
@@ -115,22 +130,24 @@ class DeviceCard extends StatelessWidget {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               Navigator.pop(dialogContext); // Close dialog first
-              final provider = Provider.of<HomeProvider>(context, listen: false);
+              final provider =
+                  Provider.of<HomeProvider>(context, listen: false);
               final success = await provider.removeDevice(device.id);
 
               if (context.mounted) {
-                  ScaffoldMessenger.of(context).removeCurrentSnackBar();
-                  if (success) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('Device deleted successfully.'),
-                      backgroundColor: Colors.green,
-                    ));
-                  } else {
-                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Error deleting device: ${provider.errorMessage}'),
-                      backgroundColor: Colors.red,
-                    ));
-                  }
+                ScaffoldMessenger.of(context).removeCurrentSnackBar();
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Device deleted successfully.'),
+                    backgroundColor: Colors.green,
+                  ));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(
+                        'Error deleting device: ${provider.errorMessage}'),
+                    backgroundColor: Colors.red,
+                  ));
+                }
               }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.white)),
@@ -139,5 +156,4 @@ class DeviceCard extends StatelessWidget {
       ),
     );
   }
-  // ===================== END OF MODIFIED METHOD =====================
 }

@@ -10,11 +10,13 @@ import '../../core/error/failures.dart';
 import '../../core/usecase/usecase.dart';
 import '../../domain/entities/device.dart';
 import '../../domain/entities/room.dart';
-import '../../domain/usecases/get_rooms_usecase.dart';
 import '../../domain/usecases/add_device_usecase.dart';
 import '../../domain/usecases/add_room_usecase.dart';
 import '../../domain/usecases/delete_device_usecase.dart';
 import '../../domain/usecases/delete_room_usecase.dart';
+import '../../domain/usecases/get_rooms_usecase.dart';
+import '../../domain/usecases/update_device_usecase.dart'; // <-- THÊM MỚI
+import '../../domain/usecases/update_room_usecase.dart'; // <-- THÊM MỚI
 
 enum AlertType { info, warning }
 
@@ -48,8 +50,10 @@ class HomeProvider extends ChangeNotifier {
   final GetRoomsUseCase getRoomsUseCase;
   final AddRoomUseCase addRoomUseCase;
   final DeleteRoomUseCase deleteRoomUseCase;
+  final UpdateRoomUseCase updateRoomUseCase; // <-- THÊM MỚI
   final AddDeviceUseCase addDeviceUseCase;
   final DeleteDeviceUseCase deleteDeviceUseCase;
+  final UpdateDeviceUseCase updateDeviceUseCase; // <-- THÊM MỚI
   final FlutterSecureStorage storage;
   final SharedPreferences sharedPreferences;
 
@@ -57,8 +61,10 @@ class HomeProvider extends ChangeNotifier {
     required this.getRoomsUseCase,
     required this.addRoomUseCase,
     required this.deleteRoomUseCase,
+    required this.updateRoomUseCase, // <-- THÊM MỚI
     required this.addDeviceUseCase,
     required this.deleteDeviceUseCase,
+    required this.updateDeviceUseCase, // <-- THÊM MỚI
     required this.storage,
     required this.sharedPreferences,
   }) {
@@ -93,7 +99,6 @@ class HomeProvider extends ChangeNotifier {
 
   static const _alertsKey = 'alert_logs';
 
-  // ===================== NEW METHOD =====================
   /// Clears all local data (rooms, alerts, WebSocket) and resets state.
   /// Should be called on logout.
   Future<void> clearLocalData() async {
@@ -109,7 +114,6 @@ class HomeProvider extends ChangeNotifier {
     await sharedPreferences.remove(_alertsKey);
     notifyListeners();
   }
-  // ===================== END OF NEW METHOD =====================
 
   Future<void> _saveAlerts() async {
     final List<String> alertJsonList =
@@ -225,7 +229,6 @@ class HomeProvider extends ChangeNotifier {
     updateDeviceState(deviceId, {'is_on': newStatus});
   }
 
-  // ===================== MODIFIED METHOD =====================
   /// Updates the state of a device across all rooms, not just the selected one.
   void _updateDeviceStateLocally(
       int deviceId, Map<String, dynamic> attributes) {
@@ -272,18 +275,14 @@ class HomeProvider extends ChangeNotifier {
         final newDevices = List<Device>.from(_rooms[roomIndex].devices);
         newDevices[deviceIndex] = updatedDevice;
 
-        _rooms[roomIndex] = Room(
-            id: _rooms[roomIndex].id,
-            name: _rooms[roomIndex].name,
-            devices: newDevices);
-            
+        _rooms[roomIndex] = _rooms[roomIndex].copyWith(devices: newDevices);
+
         // Found and updated the device, no need to continue looping.
-        break; 
+        break;
       }
     }
     notifyListeners();
   }
-  // ===================== END OF MODIFIED METHOD =====================
 
   Device? findDeviceById(int deviceId) {
     try {
@@ -390,10 +389,8 @@ class HomeProvider extends ChangeNotifier {
         if (roomIndex != -1) {
           final updatedDevices = List<Device>.from(_rooms[roomIndex].devices)
             ..add(newDevice);
-          _rooms[roomIndex] = Room(
-              id: _rooms[roomIndex].id,
-              name: _rooms[roomIndex].name,
-              devices: updatedDevices);
+          _rooms[roomIndex] =
+              _rooms[roomIndex].copyWith(devices: updatedDevices);
         }
         notifyListeners();
         return true;
@@ -422,15 +419,77 @@ class HomeProvider extends ChangeNotifier {
       if (roomIndex != -1) {
         final updatedDevices = List<Device>.from(_rooms[roomIndex].devices)
           ..removeWhere((d) => d.id == deviceId);
-        _rooms[roomIndex] = Room(
-            id: _rooms[roomIndex].id,
-            name: _rooms[roomIndex].name,
-            devices: updatedDevices);
+        _rooms[roomIndex] =
+            _rooms[roomIndex].copyWith(devices: updatedDevices);
       }
       notifyListeners();
       return true;
     });
   }
+
+  // ===================== THÊM MỚI =====================
+  Future<bool> updateRoomName(int roomId, String newName) async {
+    _isLoadingAction = true;
+    notifyListeners();
+    final result = await updateRoomUseCase(UpdateRoomParams(id: roomId, name: newName));
+    _isLoadingAction = false;
+
+    return result.fold(
+      (failure) {
+        _errorMessage =
+            failure is ServerFailure ? failure.message : 'Failed to update room';
+        notifyListeners();
+        return false;
+      },
+      (updatedRoom) {
+        final index = _rooms.indexWhere((room) => room.id == roomId);
+        if (index != -1) {
+          _rooms[index] = _rooms[index].copyWith(name: updatedRoom.name);
+        }
+        notifyListeners();
+        return true;
+      },
+    );
+  }
+
+  Future<bool> updateDeviceDetails(
+      int deviceId, String newName, String newSubtitle) async {
+    _isLoadingAction = true;
+    notifyListeners();
+    final result = await updateDeviceUseCase(UpdateDeviceParams(
+        id: deviceId, name: newName, subtitle: newSubtitle));
+    _isLoadingAction = false;
+
+    return result.fold(
+      (failure) {
+        _errorMessage = failure is ServerFailure
+            ? failure.message
+            : 'Failed to update device';
+        notifyListeners();
+        return false;
+      },
+      (updatedDevice) {
+        for (int i = 0; i < _rooms.length; i++) {
+          final deviceIndex =
+              _rooms[i].devices.indexWhere((d) => d.id == deviceId);
+          if (deviceIndex != -1) {
+            final newDevices = List<Device>.from(_rooms[i].devices);
+            
+            // Sử dụng copyWith để cập nhật thông tin
+            newDevices[deviceIndex] = newDevices[deviceIndex].copyWith(
+              name: updatedDevice.name,
+              subtitle: updatedDevice.subtitle,
+            );
+            _rooms[i] = _rooms[i].copyWith(devices: newDevices);
+            break; // Thoát vòng lặp khi đã tìm thấy và cập nhật
+          }
+        }
+        notifyListeners();
+        return true;
+      },
+    );
+  }
+  // ===================== KẾT THÚC =====================
 
   @override
   void dispose() {

@@ -2,7 +2,7 @@
 import 'package:dartz/dartz.dart';
 import '../../core/error/exceptions.dart';
 import '../../core/error/failures.dart';
-import '../../domain/entities/user.dart'; // <-- HINZUGEFÜGT
+import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_local_data_source.dart';
 import '../datasources/auth_remote_data_source.dart';
@@ -52,7 +52,6 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  // --- DIESE METHODE HINZUFÜGEN ---
   @override
   Future<Either<Failure, User>> getUserProfile() async {
     try {
@@ -62,4 +61,20 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(ServerFailure(e.message));
     }
   }
+
+  // ===================== THÊM MỚI =====================
+  @override
+  Future<Either<Failure, User>> updateUserProfile(
+      {required String name, required String phoneNumber}) async {
+    try {
+      final user = await remoteDataSource.updateUserProfile(
+        name: name,
+        phoneNumber: phoneNumber,
+      );
+      return Right(user);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    }
+  }
+  // ===================== KẾT THÚC =====================
 }

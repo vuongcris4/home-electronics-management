@@ -6,6 +6,7 @@ import '../../domain/entities/user.dart';
 import '../../domain/usecases/get_user_profile_usecase.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
+import '../../domain/usecases/update_user_profile_usecase.dart'; // <-- THÊM MỚI
 
 enum ViewState { Idle, Loading, Success, Error }
 
@@ -13,11 +14,13 @@ class AuthProvider extends ChangeNotifier {
   final LoginUseCase loginUseCase;
   final RegisterUseCase registerUseCase;
   final GetUserProfileUseCase getUserProfileUseCase;
+  final UpdateUserProfileUseCase updateUserProfileUseCase; // <-- THÊM MỚI
 
   AuthProvider({
     required this.loginUseCase,
     required this.registerUseCase,
     required this.getUserProfileUseCase,
+    required this.updateUserProfileUseCase, // <-- THÊM MỚI
   });
 
   ViewState _loginState = ViewState.Idle;
@@ -29,23 +32,26 @@ class AuthProvider extends ChangeNotifier {
   ViewState _profileState = ViewState.Idle;
   ViewState get profileState => _profileState;
 
+  // Thêm state cho hành động cập nhật
+  ViewState _updateProfileState = ViewState.Idle;
+  ViewState get updateProfileState => _updateProfileState;
+
   String _errorMessage = '';
   String get errorMessage => _errorMessage;
 
   User? _user;
   User? get user => _user;
 
-  // ===================== NEW METHOD =====================
   /// Clears user data and resets the state, typically on logout.
   void clearUserData() {
     _user = null;
     _profileState = ViewState.Idle;
     _loginState = ViewState.Idle;
     _registerState = ViewState.Idle;
+    _updateProfileState = ViewState.Idle;
     _errorMessage = '';
     notifyListeners();
   }
-  // ===================== END OF NEW METHOD =====================
 
   void _setLoginState(ViewState state) {
     _loginState = state;
@@ -59,6 +65,11 @@ class AuthProvider extends ChangeNotifier {
 
   void _setProfileState(ViewState state) {
     _profileState = state;
+    notifyListeners();
+  }
+
+  void _setUpdateProfileState(ViewState state) {
+    _updateProfileState = state;
     notifyListeners();
   }
 
@@ -136,4 +147,36 @@ class AuthProvider extends ChangeNotifier {
       },
     );
   }
+
+  // ===================== THÊM MỚI =====================
+  Future<bool> updateProfile({
+    required String name,
+    required String phoneNumber,
+  }) async {
+    _setUpdateProfileState(ViewState.Loading);
+
+    final params = UpdateUserParams(name: name, phoneNumber: phoneNumber);
+    final result = await updateUserProfileUseCase(params);
+
+    bool isSuccess = false;
+    result.fold(
+      (failure) {
+        _errorMessage =
+            failure is ServerFailure ? failure.message : 'Update failed';
+        _setUpdateProfileState(ViewState.Error);
+        isSuccess = false;
+      },
+      (updatedUser) {
+        _user = updatedUser; // Cập nhật thông tin user local
+        _setUpdateProfileState(ViewState.Success);
+        isSuccess = true;
+      },
+    );
+    
+    // Reset state về Idle sau một khoảng trễ để UI có thể cập nhật
+    Future.delayed(const Duration(seconds: 1), () => _setUpdateProfileState(ViewState.Idle));
+
+    return isSuccess;
+  }
+  // ===================== KẾT THÚC =====================
 }
