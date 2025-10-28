@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+  import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/home_provider.dart';
 
@@ -94,7 +94,7 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
 
               // --- SỬA 3: Cập nhật đường dẫn và màu sắc icon ---
               Image.asset(
-                'assets/icons/house_icon.png', // Hãy chắc chắn đường dẫn này đúng
+                'assets/icons/Home1.png', // Hãy chắc chắn đường dẫn này đúng
                 height: 140,
                 color: const Color(0xFF8FA9D6), // Màu xanh nhạt chính xác
               ),
