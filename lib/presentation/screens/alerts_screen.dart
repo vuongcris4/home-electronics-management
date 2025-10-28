@@ -136,8 +136,7 @@ class AlertsScreen extends StatelessWidget {
                   height: 44,
                   child: IconButton(
                     padding: EdgeInsets.zero,
-                    icon: Image.asset('assets/icons/exit.png',
-                        color: kPrimaryColor),
+                    icon: Image.asset('assets/icons/exit.png', ),
                     onPressed: () => _logout(context),
                   ),
                 ),
