@@ -1,7 +1,7 @@
 // lib/core/usecase/usecase.dart
 import 'package:dartz/dartz.dart'; // Thư viện cho Either
 import 'package:equatable/equatable.dart';
-import '../error/failures.dart'; // Lớp Failure đã định nghĩa
+import '../error/app_error.dart'; // Lớp Failure đã định nghĩa
 
 // 1. Lớp trừu tượng UseCase
 // Đây là một lớp trừu tượng (abstract class) sử dụng Generics (kiểu dữ liệu chung).

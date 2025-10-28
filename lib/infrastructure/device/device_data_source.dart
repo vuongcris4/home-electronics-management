@@ -1,6 +1,6 @@
-// lib/infrastructure/datasources/device_remote_data_source.dart
+// lib/infrastructure/device/device_data_source.dart
 import 'package:dio/dio.dart';
-import '../../core/error/exceptions.dart';
+import '../../core/error/app_error.dart';
 import '../../domain/entities/device.dart';
 
 abstract class DeviceRemoteDataSource {
@@ -12,13 +12,11 @@ abstract class DeviceRemoteDataSource {
     DeviceType deviceType,
   );
   Future<void> deleteDevice(int deviceId);
-  // ===================== THÊM MỚI =====================
   Future<Device> updateDevice(
     int deviceId,
     String name,
     String subtitle,
   );
-  // ===================== KẾT THÚC =====================
 }
 
 class DeviceRemoteDataSourceImpl implements DeviceRemoteDataSource {
@@ -63,7 +61,6 @@ class DeviceRemoteDataSourceImpl implements DeviceRemoteDataSource {
     }
   }
 
-  // ===================== THÊM MỚI =====================
   @override
   Future<Device> updateDevice(
       int deviceId, String name, String subtitle) async {
@@ -80,5 +77,4 @@ class DeviceRemoteDataSourceImpl implements DeviceRemoteDataSource {
       throw ServerException(e.response?.data['detail'] ?? "Failed to update device");
     }
   }
-  // ===================== KẾT THÚC =====================
 }

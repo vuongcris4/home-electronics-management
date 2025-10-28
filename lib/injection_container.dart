@@ -7,34 +7,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/api/auth_interceptor.dart';
 import 'core/navigation/navigation_service.dart';
 
-// -------------------- Auth (Domain & Infra) --------------------
-import 'domain/repositories/auth_repository.dart';
-import 'domain/usecases/login_usecase.dart';
-import 'domain/usecases/register_usecase.dart';
-import 'domain/usecases/get_user_profile_usecase.dart';
-import 'domain/usecases/update_user_profile_usecase.dart'; // <-- THÊM MỚI
-import 'infrastructure/datasources/auth_local_data_source.dart';
-import 'infrastructure/datasources/auth_remote_data_source.dart';
-import 'infrastructure/repositories/auth_repository_impl.dart';
+// --- Domain ---
+import 'domain/repositories.dart';
+import 'domain/usecases/auth_usecases.dart';
+import 'domain/usecases/device_usecases.dart';
+import 'domain/usecases/room_usecases.dart';
 
-// -------------------- Room (Domain & Infra) --------------------
-import 'domain/repositories/room_repository.dart';
-import 'domain/usecases/get_rooms_usecase.dart';
-import 'domain/usecases/add_room_usecase.dart';
-import 'domain/usecases/delete_room_usecase.dart';
-import 'domain/usecases/update_room_usecase.dart'; // <-- THÊM MỚI
-import 'infrastructure/datasources/room_remote_data_source.dart';
-import 'infrastructure/repositories/room_repository_impl.dart';
+// --- Infrastructure ---
+import 'infrastructure/auth/auth_data_sources.dart';
+import 'infrastructure/auth/auth_repository_impl.dart';
+import 'infrastructure/device/device_data_source.dart';
+import 'infrastructure/device/device_repository_impl.dart';
+import 'infrastructure/room/room_data_source.dart';
+import 'infrastructure/room/room_repository_impl.dart';
 
-// -------------------- Device (Domain & Infra) --------------------
-import 'domain/repositories/device_repository.dart';
-import 'domain/usecases/add_device_usecase.dart';
-import 'domain/usecases/delete_device_usecase.dart';
-import 'domain/usecases/update_device_usecase.dart'; // <-- THÊM MỚI
-import 'infrastructure/datasources/device_remote_data_source.dart';
-import 'infrastructure/repositories/device_repository_impl.dart';
 
-// -------------------- Presentation (Providers) --------------------
+// --- Presentation (Providers) ---
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/home_provider.dart';
 
@@ -47,7 +35,7 @@ Future<void> configureDependencies() async {
       loginUseCase: getIt<LoginUseCase>(),
       registerUseCase: getIt<RegisterUseCase>(),
       getUserProfileUseCase: getIt<GetUserProfileUseCase>(),
-      updateUserProfileUseCase: getIt<UpdateUserProfileUseCase>(), // <-- CẬP NHẬT
+      updateUserProfileUseCase: getIt<UpdateUserProfileUseCase>(),
     ),
   );
 
@@ -56,10 +44,10 @@ Future<void> configureDependencies() async {
       getRoomsUseCase: getIt<GetRoomsUseCase>(),
       addRoomUseCase: getIt<AddRoomUseCase>(),
       deleteRoomUseCase: getIt<DeleteRoomUseCase>(),
-      updateRoomUseCase: getIt<UpdateRoomUseCase>(), // <-- CẬP NHẬT
+      updateRoomUseCase: getIt<UpdateRoomUseCase>(),
       addDeviceUseCase: getIt<AddDeviceUseCase>(),
       deleteDeviceUseCase: getIt<DeleteDeviceUseCase>(),
-      updateDeviceUseCase: getIt<UpdateDeviceUseCase>(), // <-- CẬP NHẬT
+      updateDeviceUseCase: getIt<UpdateDeviceUseCase>(),
       storage: getIt<FlutterSecureStorage>(),
       sharedPreferences: getIt<SharedPreferences>(),
     ),
@@ -69,16 +57,16 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => LoginUseCase(getIt<AuthRepository>()));
   getIt.registerLazySingleton(() => RegisterUseCase(getIt<AuthRepository>()));
   getIt.registerLazySingleton(() => GetUserProfileUseCase(getIt<AuthRepository>()));
-  getIt.registerLazySingleton(() => UpdateUserProfileUseCase(getIt<AuthRepository>())); // <-- THÊM MỚI
+  getIt.registerLazySingleton(() => UpdateUserProfileUseCase(getIt<AuthRepository>()));
 
   getIt.registerLazySingleton(() => GetRoomsUseCase(getIt<RoomRepository>()));
   getIt.registerLazySingleton(() => AddRoomUseCase(getIt<RoomRepository>()));
   getIt.registerLazySingleton(() => DeleteRoomUseCase(getIt<RoomRepository>()));
-  getIt.registerLazySingleton(() => UpdateRoomUseCase(getIt<RoomRepository>())); // <-- THÊM MỚI
+  getIt.registerLazySingleton(() => UpdateRoomUseCase(getIt<RoomRepository>()));
 
   getIt.registerLazySingleton(() => AddDeviceUseCase(getIt<DeviceRepository>()));
   getIt.registerLazySingleton(() => DeleteDeviceUseCase(getIt<DeviceRepository>()));
-  getIt.registerLazySingleton(() => UpdateDeviceUseCase(getIt<DeviceRepository>())); // <-- THÊM MỚI
+  getIt.registerLazySingleton(() => UpdateDeviceUseCase(getIt<DeviceRepository>()));
 
   // -------------------- Infrastructure (Repositories) --------------------
   getIt.registerLazySingleton<AuthRepository>(

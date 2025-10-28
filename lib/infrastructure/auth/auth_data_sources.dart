@@ -1,8 +1,10 @@
-// lib/infrastructure/datasources/auth_remote_data_source.dart
+// lib/infrastructure/auth/auth_data_sources.dart
 import 'package:dio/dio.dart';
-import '../../core/error/exceptions.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../core/error/app_error.dart';
 import '../../domain/entities/user.dart';
 
+// --- Remote Data Source ---
 abstract class AuthRemoteDataSource {
   Future<Map<String, dynamic>> login(String email, String password);
   Future<void> register({
@@ -13,17 +15,14 @@ abstract class AuthRemoteDataSource {
     required String phoneNumber,
   });
   Future<User> getUserProfile();
-  // ===================== THÊM MỚI =====================
   Future<User> updateUserProfile({
     required String name,
     required String phoneNumber,
   });
-  // ===================== KẾT THÚC =====================
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final Dio dio;
-
   AuthRemoteDataSourceImpl({required this.dio});
 
   @override
@@ -87,7 +86,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
   }
 
-  // ===================== THÊM MỚI =====================
   @override
   Future<User> updateUserProfile(
       {required String name, required String phoneNumber}) async {
@@ -105,5 +103,27 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           e.response?.data['detail'] ?? 'Failed to update user profile');
     }
   }
-  // ===================== KẾT THÚC =====================
+}
+
+
+// --- Local Data Source ---
+abstract class AuthLocalDataSource {
+  Future<void> cacheTokens({
+    required String accessToken,
+    required String refreshToken,
+  });
+}
+
+class AuthLocalDataSourceImpl implements AuthLocalDataSource {
+  final FlutterSecureStorage storage;
+  AuthLocalDataSourceImpl({required this.storage});
+
+  @override
+  Future<void> cacheTokens({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
+    await storage.write(key: 'access_token', value: accessToken);
+    await storage.write(key: 'refresh_token', value: refreshToken);
+  }
 }

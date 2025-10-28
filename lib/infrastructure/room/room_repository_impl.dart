@@ -1,10 +1,9 @@
-// lib/infrastructure/repositories/room_repository_impl.dart
+// lib/infrastructure/room/room_repository_impl.dart
 import 'package:dartz/dartz.dart';
-import '../../core/error/exceptions.dart';
-import '../../core/error/failures.dart';
+import '../../core/error/app_error.dart';
 import '../../domain/entities/room.dart';
-import '../../domain/repositories/room_repository.dart';
-import '../datasources/room_remote_data_source.dart';
+import '../../domain/repositories.dart';
+import 'room_data_source.dart';
 
 class RoomRepositoryImpl implements RoomRepository {
   final RoomRemoteDataSource remote;
@@ -41,7 +40,6 @@ class RoomRepositoryImpl implements RoomRepository {
     }
   }
 
-  // ===================== THÊM MỚI =====================
   @override
   Future<Either<Failure, Room>> updateRoom(int roomId, String name) async {
     try {
@@ -51,5 +49,4 @@ class RoomRepositoryImpl implements RoomRepository {
       return Left(ServerFailure(e.message));
     }
   }
-  // ===================== KẾT THÚC =====================
 }

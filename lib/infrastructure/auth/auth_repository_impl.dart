@@ -1,11 +1,10 @@
-// lib/infrastructure/repositories/auth_repository_impl.dart
+// lib/infrastructure/auth/auth_repository_impl.dart
 import 'package:dartz/dartz.dart';
-import '../../core/error/exceptions.dart';
-import '../../core/error/failures.dart';
+
+import '../../core/error/app_error.dart';
 import '../../domain/entities/user.dart';
-import '../../domain/repositories/auth_repository.dart';
-import '../datasources/auth_local_data_source.dart';
-import '../datasources/auth_remote_data_source.dart';
+import '../../domain/repositories.dart';
+import 'auth_data_sources.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
@@ -62,7 +61,6 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  // ===================== THÊM MỚI =====================
   @override
   Future<Either<Failure, User>> updateUserProfile(
       {required String name, required String phoneNumber}) async {
@@ -76,5 +74,4 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(ServerFailure(e.message));
     }
   }
-  // ===================== KẾT THÚC =====================
 }

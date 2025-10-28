@@ -1,15 +1,13 @@
-// lib/infrastructure/datasources/room_remote_data_source.dart
+// lib/infrastructure/room/room_data_source.dart
 import 'package:dio/dio.dart';
-import '../../core/error/exceptions.dart';
+import '../../core/error/app_error.dart';
 import '../../domain/entities/room.dart';
 
 abstract class RoomRemoteDataSource {
   Future<List<Room>> getRooms();
   Future<Room> addRoom(String name);
   Future<void> deleteRoom(int roomId);
-  // ===================== THÊM MỚI =====================
   Future<Room> updateRoom(int roomId, String name);
-  // ===================== KẾT THÚC =====================
 }
 
 class RoomRemoteDataSourceImpl implements RoomRemoteDataSource {
@@ -48,7 +46,6 @@ class RoomRemoteDataSourceImpl implements RoomRemoteDataSource {
     }
   }
 
-  // ===================== THÊM MỚI =====================
   @override
   Future<Room> updateRoom(int roomId, String name) async {
     try {
@@ -58,5 +55,4 @@ class RoomRemoteDataSourceImpl implements RoomRemoteDataSource {
       throw ServerException("Failed to update room");
     }
   }
-  // ===================== KẾT THÚC =====================
 }

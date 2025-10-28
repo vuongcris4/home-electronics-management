@@ -6,17 +6,12 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-import '../../core/error/failures.dart';
+import '../../core/error/app_error.dart';
 import '../../core/usecase/usecase.dart';
 import '../../domain/entities/device.dart';
 import '../../domain/entities/room.dart';
-import '../../domain/usecases/add_device_usecase.dart';
-import '../../domain/usecases/add_room_usecase.dart';
-import '../../domain/usecases/delete_device_usecase.dart';
-import '../../domain/usecases/delete_room_usecase.dart';
-import '../../domain/usecases/get_rooms_usecase.dart';
-import '../../domain/usecases/update_device_usecase.dart'; // <-- THÊM MỚI
-import '../../domain/usecases/update_room_usecase.dart'; // <-- THÊM MỚI
+import '../../domain/usecases/device_usecases.dart';
+import '../../domain/usecases/room_usecases.dart';
 
 enum AlertType { info, warning }
 
@@ -50,10 +45,10 @@ class HomeProvider extends ChangeNotifier {
   final GetRoomsUseCase getRoomsUseCase;
   final AddRoomUseCase addRoomUseCase;
   final DeleteRoomUseCase deleteRoomUseCase;
-  final UpdateRoomUseCase updateRoomUseCase; // <-- THÊM MỚI
+  final UpdateRoomUseCase updateRoomUseCase;
   final AddDeviceUseCase addDeviceUseCase;
   final DeleteDeviceUseCase deleteDeviceUseCase;
-  final UpdateDeviceUseCase updateDeviceUseCase; // <-- THÊM MỚI
+  final UpdateDeviceUseCase updateDeviceUseCase;
   final FlutterSecureStorage storage;
   final SharedPreferences sharedPreferences;
 
@@ -61,10 +56,10 @@ class HomeProvider extends ChangeNotifier {
     required this.getRoomsUseCase,
     required this.addRoomUseCase,
     required this.deleteRoomUseCase,
-    required this.updateRoomUseCase, // <-- THÊM MỚI
+    required this.updateRoomUseCase,
     required this.addDeviceUseCase,
     required this.deleteDeviceUseCase,
-    required this.updateDeviceUseCase, // <-- THÊM MỚI
+    required this.updateDeviceUseCase,
     required this.storage,
     required this.sharedPreferences,
   }) {
@@ -99,8 +94,6 @@ class HomeProvider extends ChangeNotifier {
 
   static const _alertsKey = 'alert_logs';
 
-  /// Clears all local data (rooms, alerts, WebSocket) and resets state.
-  /// Should be called on logout.
   Future<void> clearLocalData() async {
     _channelSubscription?.cancel();
     _channel?.sink.close();
@@ -110,7 +103,6 @@ class HomeProvider extends ChangeNotifier {
     _selectedRoomIndex = -1;
     _state = HomeState.Initial;
     _errorMessage = '';
-    // Clear persisted alerts from storage
     await sharedPreferences.remove(_alertsKey);
     notifyListeners();
   }
@@ -229,7 +221,6 @@ class HomeProvider extends ChangeNotifier {
     updateDeviceState(deviceId, {'is_on': newStatus});
   }
 
-  /// Updates the state of a device across all rooms, not just the selected one.
   void _updateDeviceStateLocally(
       int deviceId, Map<String, dynamic> attributes) {
     for (int roomIndex = 0; roomIndex < _rooms.length; roomIndex++) {
@@ -276,8 +267,6 @@ class HomeProvider extends ChangeNotifier {
         newDevices[deviceIndex] = updatedDevice;
 
         _rooms[roomIndex] = _rooms[roomIndex].copyWith(devices: newDevices);
-
-        // Found and updated the device, no need to continue looping.
         break;
       }
     }
@@ -287,7 +276,6 @@ class HomeProvider extends ChangeNotifier {
   Device? findDeviceById(int deviceId) {
     try {
       for (final room in _rooms) {
-        // Use firstWhereOrNull to avoid exceptions if not found
         final device = room.devices.cast<Device?>().firstWhere(
               (d) => d?.id == deviceId,
               orElse: () => null,
@@ -412,7 +400,6 @@ class HomeProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }, (_) {
-      // Find the room containing the device and remove it
       final roomIndex = _rooms.indexWhere(
           (room) => room.devices.any((device) => device.id == deviceId));
 
@@ -427,7 +414,6 @@ class HomeProvider extends ChangeNotifier {
     });
   }
 
-  // ===================== THÊM MỚI =====================
   Future<bool> updateRoomName(int roomId, String newName) async {
     _isLoadingAction = true;
     notifyListeners();
@@ -475,13 +461,12 @@ class HomeProvider extends ChangeNotifier {
           if (deviceIndex != -1) {
             final newDevices = List<Device>.from(_rooms[i].devices);
             
-            // Sử dụng copyWith để cập nhật thông tin
             newDevices[deviceIndex] = newDevices[deviceIndex].copyWith(
               name: updatedDevice.name,
               subtitle: updatedDevice.subtitle,
             );
             _rooms[i] = _rooms[i].copyWith(devices: newDevices);
-            break; // Thoát vòng lặp khi đã tìm thấy và cập nhật
+            break;
           }
         }
         notifyListeners();
@@ -489,7 +474,6 @@ class HomeProvider extends ChangeNotifier {
       },
     );
   }
-  // ===================== KẾT THÚC =====================
 
   @override
   void dispose() {

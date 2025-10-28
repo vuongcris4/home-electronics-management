@@ -1,10 +1,9 @@
-// lib/infrastructure/repositories/device_repository_impl.dart
+// lib/infrastructure/device/device_repository_impl.dart
 import 'package:dartz/dartz.dart';
-import '../../core/error/exceptions.dart';
-import '../../core/error/failures.dart';
+import '../../core/error/app_error.dart';
 import '../../domain/entities/device.dart';
-import '../../domain/repositories/device_repository.dart';
-import '../datasources/device_remote_data_source.dart';
+import '../../domain/repositories.dart';
+import 'device_data_source.dart';
 
 class DeviceRepositoryImpl implements DeviceRepository {
   final DeviceRemoteDataSource remote;
@@ -37,7 +36,6 @@ class DeviceRepositoryImpl implements DeviceRepository {
     }
   }
 
-  // ===================== THÊM MỚI =====================
   @override
   Future<Either<Failure, Device>> updateDevice(
       int deviceId, String name, String subtitle) async {
@@ -48,5 +46,4 @@ class DeviceRepositoryImpl implements DeviceRepository {
       return Left(ServerFailure(e.message));
     }
   }
-  // ===================== KẾT THÚC =====================
 }
