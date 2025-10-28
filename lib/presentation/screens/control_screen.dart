@@ -26,9 +26,10 @@ class _ControlScreenState extends State<ControlScreen> {
     return Consumer<HomeProvider>(
       builder: (context, provider, child) {
         final device = provider.findDeviceById(widget.device.id) ?? widget.device;
-
+      
         return Scaffold(
           backgroundColor: kBackgroundColor,
+          resizeToAvoidBottomInset: false,
           body: SafeArea(
             child: Stack(
               children: [
