@@ -1,16 +1,29 @@
 // lib/presentation/screens/home_screen.dart
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/home_provider.dart';
-import '../widgets/device_card.dart';
-import '../widgets/home_header.dart';
-import '../widgets/room_tabs.dart';
-import '../widgets/home_bottom_nav_bar.dart';
-import './alerts_screen.dart'; // <-- 1. IMPORT ALERTS SCREEN
-import './account.dart'; 
 
+// Import thư viện Material UI cơ bản của Flutter
+import 'package:flutter/material.dart';
+// Import Provider để quản lý state
+import 'package:provider/provider.dart';
+// Import HomeProvider (quản lý state cho rooms, devices)
+import '../providers/home_provider.dart';
+// Import widget 'DeviceCard' (hiển thị 1 ô thiết bị)
+import '../widgets/device_card.dart';
+// Import widget 'HomeHeader' (hiwwển thị tiêu đề "Control Home")
+import '../widgets/home_header.dart';
+// Import widget 'RoomTabs' (thanh chọn phòng)
+import '../widgets/room_tabs.dart';
+// Import widget 'HomeBottomNavBar' (thanh điều hướng dưới cùng)
+import '../widgets/home_bottom_nav_bar.dart';
+// Import màn hình 'AlertsScreen'
+import './alerts_screen.dart'; // <-- 1. IMPORT ALERTS SCREEN
+// Import màn hình 'ProfileScreen' (do file tên là account.dart)
+import './account.dart';
+
+// Hằng số định nghĩa màu nền chính cho màn hình
 const Color kBackgroundColor = Color(0xFFF2F6FC);
 
+// Widget chính cho màn hình Home, là một StatefulWidget
+// Nó cần là StatefulWidget vì nó quản lý trạng thái (_selectedIndex) của BottomNavBar
 class SmartHomeScreen extends StatefulWidget {
   const SmartHomeScreen({super.key});
 
@@ -18,26 +31,33 @@ class SmartHomeScreen extends StatefulWidget {
   State<SmartHomeScreen> createState() => _SmartHomeScreenState();
 }
 
+// Class chứa State (trạng thái) của SmartHomeScreen
 class _SmartHomeScreenState extends State<SmartHomeScreen> {
+  // Biến lưu trữ index (vị trí) của tab đang được chọn ở BottomNavBar
   int _selectedIndex = 1; // <-- 2. ĐẶT MÀN HÌNH MẶC ĐỊNH LÀ HOME (INDEX 1)
 
   @override
   void initState() {
     super.initState();
-    // Fetch initial room data when the widget is first built
+    // initState được gọi 1 lần khi widget được tạo
+    // Dùng addPostFrameCallback để gọi hàm *sau khi* frame đầu tiên được build xong
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Lấy HomeProvider (listen: false vì chỉ muốn gọi hàm) và fetch dữ liệu phòng
       Provider.of<HomeProvider>(context, listen: false).fetchRooms();
     });
   }
 
   // <-- 3. CẬP NHẬT DANH SÁCH MÀN HÌNH
+  // Danh sách các widget (màn hình) tương ứng với các tab của BottomNavBar
   static const List<Widget> _pages = <Widget>[
     AlertsScreen(),       // Index 0: Màn hình cảnh báo
-    _HomeScreenContent(), // Index 1: Màn hình chính với các thiết bị
+    _HomeScreenContent(), // Index 1: Màn hình chính (nội dung home)
     ProfileScreen(),      // Index 2: Màn hình tài khoản
   ];
 
+  // Hàm được gọi khi người dùng nhấn vào một item trên BottomNavBar
   void _onItemTapped(int index) {
+    // Cập nhật lại state để thay đổi màn hình
     setState(() {
       _selectedIndex = index;
     });
@@ -45,46 +65,56 @@ class _SmartHomeScreenState extends State<SmartHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Scaffold là khung sườn cho màn hình
     return Scaffold(
-      backgroundColor: kBackgroundColor,
-      // Hiển thị màn hình được chọn từ danh sách _pages
+      backgroundColor: kBackgroundColor, // Đặt màu nền
+      // Body của Scaffold sẽ hiển thị màn hình (page) dựa trên _selectedIndex
       body: IndexedStack(
+        // IndexedStack giữ cho tất cả các màn hình con trong _pages luôn "sống"
+        // nhưng chỉ hiển thị cái có index = _selectedIndex
         index: _selectedIndex,
         children: _pages,
       ),
-      // Sử dụng bottom navigation bar đã cập nhật
+      // Thanh điều hướng dưới cùng
       bottomNavigationBar: HomeBottomNavBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
+        currentIndex: _selectedIndex, // Truyền index hiện tại
+        onTap: _onItemTapped, // Truyền hàm xử lý khi nhấn
       ),
     );
   }
 }
 
-/// This widget contains the original UI for the home screen.
+/// Widget này chứa giao diện gốc của màn hình home (thiết bị, phòng...)
+/// Tách ra thành widget riêng để 'SmartHomeScreen' chỉ làm nhiệm vụ điều hướng
 class _HomeScreenContent extends StatelessWidget {
   const _HomeScreenContent();
 
   @override
   Widget build(BuildContext context) {
+    // SafeArea đảm bảo nội dung không bị che bởi tai thỏ, thanh trạng thái...
     return SafeArea(
-      bottom: false,
+      bottom: false, // Không áp dụng SafeArea cho cạnh dưới
+      // Stack cho phép các widget con xếp chồng lên nhau
+      // (Dùng để HomeHeader nổi lên trên)
       child: Stack(
         children: [
+          // Padding cho nội dung chính
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            // Column xếp các widget con theo chiều dọc
             child: Column(
               children: [
-                const SizedBox(height: 130), // Space for the header
-                const RoomTabs(),
-                const SizedBox(height: 20),
-                const Expanded(child: _DeviceGrid()),
-                const SizedBox(height: 20),
-                _AddDeviceButton(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 130),          // Tạo khoảng trống cho HomeHeader
+                const RoomTabs(),                     // Hiển thị thanh chọn phòng
+                const SizedBox(height: 20),           // Khoảng cách
+                const Expanded(child: _DeviceGrid()), // Lưới thiết bị, Expanded lấp đầy
+                const SizedBox(height: 20),           // Khoảng cách
+                _AddDeviceButton(),                   // Nút "Add Device"
+                const SizedBox(height: 20),           // Khoảng cách
               ],
             ),
           ),
+          // HomeHeader nằm trong Stack, sẽ nổi lên trên cùng
           const HomeHeader(),
         ],
       ),
@@ -92,16 +122,20 @@ class _HomeScreenContent extends StatelessWidget {
   }
 }
 
-/// The grid that displays device cards. (Unchanged)
+/// Widget hiển thị lưới (Grid) các 'DeviceCard'.
 class _DeviceGrid extends StatelessWidget {
   const _DeviceGrid();
   @override
   Widget build(BuildContext context) {
+    // Consumer "lắng nghe" thay đổi từ HomeProvider
     return Consumer<HomeProvider>(
       builder: (context, provider, child) {
+        // == Xử lý các trạng thái khác nhau của Provider ==
+        // 1. Nếu đang tải
         if (provider.state == HomeState.Loading) {
           return const Center(child: CircularProgressIndicator());
         }
+        // 2. Nếu bị lỗi
         if (provider.state == HomeState.Error) {
           return Center(
             child: Padding(
@@ -114,11 +148,13 @@ class _DeviceGrid extends StatelessWidget {
             ),
           );
         }
+        // 3. Nếu chưa chọn phòng nào
         if (provider.selectedRoom == null) {
           return const Center(
               child: Text("Select a room or add a new one.",
                   style: TextStyle(color: Color(0xFF6F7EA8))));
         }
+        // 4. Nếu phòng được chọn không có thiết bị nào
         if (provider.selectedRoom!.devices.isEmpty) {
           return const Center(
               child: Text(
@@ -126,16 +162,21 @@ class _DeviceGrid extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Color(0xFF6F7EA8))));
         }
+        // 5. Nếu mọi thứ OK, hiển thị GridView
         return GridView.builder(
+          // Định nghĩa layout của Grid
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 20,
-            mainAxisSpacing: 20,
-            childAspectRatio: 1.0,
+            crossAxisCount: 2,      // 2 cột
+            crossAxisSpacing: 20,   // Khoảng cách ngang
+            mainAxisSpacing: 20,    // Khoảng cách dọc
+            childAspectRatio: 1.0,  // Tỷ lệ (vuông)
           ),
+          // Số lượng item bằng số thiết bị trong phòng đã chọn
           itemCount: provider.selectedRoom!.devices.length,
+          // Hàm build cho mỗi item
           itemBuilder: (context, index) {
             final device = provider.selectedRoom!.devices[index];
+            // Mỗi item là một DeviceCard
             return DeviceCard(device: device);
           },
         );
@@ -144,20 +185,22 @@ class _DeviceGrid extends StatelessWidget {
   }
 }
 
-/// The "Add Device" button. (Unchanged)
+/// Widget cho nút "Add Device".
 class _AddDeviceButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // Dùng context.watch để lấy Provider (build lại khi provider thay đổi)
     final provider = context.watch<HomeProvider>();
     return ElevatedButton(
+      // Nút bị vô hiệu hóa (onPressed: null) nếu chưa chọn phòng
       onPressed: provider.selectedRoom == null
           ? null
-          : () => Navigator.pushNamed(context, '/add-device'),
+          : () => Navigator.pushNamed(context, '/add-device'),  // Điều hướng khi nhấn
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF2666DE),
-        minimumSize: const Size(260, 60),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        elevation: 8,
+        backgroundColor: const Color(0xFF2666DE),               // Màu nền nút
+        minimumSize: const Size(260, 60),                       // Kích thước tối thiểu
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), // Bo góc
+        elevation: 8, // Đổ bóng
         shadowColor: const Color(0xFF2666DE).withOpacity(0.4),
       ),
       child: const Text(
