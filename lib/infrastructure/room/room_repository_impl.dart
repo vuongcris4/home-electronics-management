@@ -15,68 +15,68 @@ class RoomRepositoryImpl implements RoomRepository {
   // mà không cần thay đổi Repository.
   final RoomRemoteDataSource remote;
 
+  // Constructor: Yêu cầu 'remote' phải được cung cấp (dependency injection)
   RoomRepositoryImpl({required this.remote});
 
   // Triển khai hàm lấy danh sách phòng
   @override
+  // Triển khai hàm 'getRooms'
+  // Trả về 'Either' (Hoặc 'Failure' (Lỗi), Hoặc 'List<Room>' (Thành công))
   Future<Either<Failure, List<Room>>> getRooms() async {
     try {
-      // 1. Gọi hàm lấy dữ liệu từ Data Source (remote).
-      // Data Source sẽ trả về List<Room> hoặc ném ra 'ServerException'.
+      // 1. Gọi hàm 'getRooms' từ remote data source (lấy dữ liệu từ API)
       final rooms = await remote.getRooms();
-
-      // 2. Nếu cuộc gọi thành công, gói kết quả (List<Room>)
-      // vào bên 'Right' của 'Either'. 'Right' luôn đại diện cho thành công.
+      // 2. Nếu thành công, trả về kết quả (danh sách rooms) bọc trong 'Right'
       return Right(rooms);
     } on ServerException catch (e) {
-      // 3. Nếu Data Source ném ra 'ServerException' (đã được bắt ở lớp Data),
-      // "bắt" nó lại và chuyển đổi nó thành 'ServerFailure'.
-      // Gói 'Failure' này vào bên 'Left' của 'Either'. 'Left' luôn đại diện cho lỗi.
-      // Điều này ngăn chặn Exception bị ném lên Lớp Domain (UseCase),
-      // Lớp Domain giờ đây chỉ cần xử lý kiểu Either<Failure, Success>.
+      // 3. Nếu remote data source ném ra 'ServerException'
+      // Bắt (catch) lỗi đó, bọc nó trong 'ServerFailure' và trả về 'Left'
       return Left(ServerFailure(e.message));
     }
   }
 
   // Triển khai hàm thêm phòng
   @override
+  // Triển khai hàm 'addRoom'
   Future<Either<Failure, Room>> addRoom(String name) async {
     try {
-      // 1. Gọi remote Data Source
+      // 1. Gọi hàm 'addRoom' từ remote data source
       final room = await remote.addRoom(name);
-      // 2. Thành công -> trả về Right(Room)
+      // 2. Nếu thành công, trả về 'Room' mới bọc trong 'Right'
       return Right(room);
     } on ServerException catch (e) {
-      // 3. Thất bại -> bắt Exception và trả về Left(Failure)
+      // 3. Nếu lỗi, trả về 'Left'
       return Left(ServerFailure(e.message));
     }
   }
 
   // Triển khai hàm xóa phòng
   @override
+  // Triển khai hàm 'deleteRoom'
+  // 'Unit' (từ dartz) là kiểu đại diện cho 'void' (không có data trả về)
   Future<Either<Failure, Unit>> deleteRoom(int roomId) async {
     try {
-      // 1. Gọi remote Data Source. Hàm này (deleteRoom) không trả về gì (Future<void>).
+      // 1. Gọi hàm 'deleteRoom' từ remote data source (hàm này là Future<void>)
       await remote.deleteRoom(roomId);
-      // 2. Nếu không có lỗi, trả về 'Right(unit)'.
-      // 'unit' là một hằng số từ 'dartz' đại diện cho 'void' (thành công nhưng không có data).
+      // 2. Nếu thành công (không có exception), trả về 'unit' bọc trong 'Right'
       return const Right(unit);
     } on ServerException catch (e) {
-      // 3. Thất bại -> trả về Left(Failure)
+      // 3. Nếu lỗi, trả về 'Left'
       return Left(ServerFailure(e.message));
     }
   }
 
   // Triển khai hàm cập nhật phòng
   @override
+  // Triển khai hàm 'updateRoom'
   Future<Either<Failure, Room>> updateRoom(int roomId, String name) async {
     try {
-      // 1. Gọi remote Data Source
+      // 1. Gọi hàm 'updateRoom' từ remote data source
       final room = await remote.updateRoom(roomId, name);
-      // 2. Thành công -> trả về Right(Room)
+      // 2. Nếu thành công, trả về 'Room' đã cập nhật bọc trong 'Right'
       return Right(room);
     } on ServerException catch (e) {
-      // 3. Thất bại -> trả về Left(Failure)
+      // 3. Nếu lỗi, trả về 'Left'
       return Left(ServerFailure(e.message));
     }
   }

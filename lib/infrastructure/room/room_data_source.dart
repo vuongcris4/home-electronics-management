@@ -7,9 +7,13 @@ import '../../domain/entities/room.dart'; // (Lớp 2) Import Entity 'Room' đ�
 // Lớp Repository (ở Lớp 3) sẽ phụ thuộc vào Interface này,
 // chứ không phải vào lớp Implementation bên dưới.
 abstract class RoomRemoteDataSource {
+  // Hợp đồng: Cần có hàm 'getRooms' trả về một danh sách Room
   Future<List<Room>> getRooms();
+  // Hợp đồng: Cần có hàm 'addRoom' trả về Room vừa được tạo
   Future<Room> addRoom(String name);
+  // Hợp đồng: Cần có hàm 'deleteRoom' (không trả về gì - void)
   Future<void> deleteRoom(int roomId);
+  // Hợp đồng: Cần có hàm 'updateRoom' trả về Room vừa được cập nhật
   Future<Room> updateRoom(int roomId, String name);
 }
 
@@ -19,10 +23,12 @@ class RoomRemoteDataSourceImpl implements RoomRemoteDataSource {
   // Nó phụ thuộc vào Dio (được cung cấp từ bên ngoài - Dependency Injection)
   final Dio dio;
 
+  // Constructor: Yêu cầu 'dio' phải được cung cấp (dependency injection)
   RoomRemoteDataSourceImpl({required this.dio});
 
   // Triển khai hàm lấy danh sách phòng
   @override
+  // Triển khai hàm 'getRooms'
   Future<List<Room>> getRooms() async {
     try {
       // 1. Thực hiện cuộc gọi 'GET' đến endpoint '/rooms/'
@@ -44,6 +50,7 @@ class RoomRemoteDataSourceImpl implements RoomRemoteDataSource {
 
   // Triển khai hàm thêm phòng mới
   @override
+  // Triển khai hàm 'addRoom'
   Future<Room> addRoom(String name) async {
     try {
       // 1. Thực hiện cuộc gọi 'POST', gửi 'name' trong 'data' (body) của request
@@ -60,6 +67,7 @@ class RoomRemoteDataSourceImpl implements RoomRemoteDataSource {
 
   // Triển khai hàm xóa phòng
   @override
+  // Triển khai hàm 'deleteRoom'
   Future<void> deleteRoom(int roomId) async {
     try {
       // 1. Thực hiện cuộc gọi 'DELETE' đến endpoint cụ thể (ví dụ: /rooms/123/)
@@ -79,6 +87,7 @@ class RoomRemoteDataSourceImpl implements RoomRemoteDataSource {
 
   // Triển khai hàm cập nhật phòng
   @override
+  // Triển khai hàm 'updateRoom'
   Future<Room> updateRoom(int roomId, String name) async {
     try {
       // 1. Thực hiện cuộc gọi 'PUT' (hoặc 'PATCH') đến endpoint cụ thể,
