@@ -26,6 +26,7 @@ class _LoginFormState extends State<LoginForm> {
     // Thêm kiểm tra `mounted` để đảm bảo widget vẫn còn trong cây widget
     if (!mounted) return;
 
+    // như này là tìm Provider cha gần nhất, và cụ thể là kiểu <AuthProvider>
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.login(
       _emailController.text.trim(),

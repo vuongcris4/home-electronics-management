@@ -170,4 +170,6 @@ class AuthProvider extends ChangeNotifier {
 
     return isSuccess;
   }
+
+
 }

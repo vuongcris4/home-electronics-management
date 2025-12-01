@@ -13,7 +13,7 @@ import '../../domain/entities/room.dart';
 import '../../domain/usecases/device_usecases.dart';
 import '../../domain/usecases/room_usecases.dart';
 
-enum AlertType { info, warning }
+enum AlertType { info, warning }  // Trạng thái thông báo
 
 class AlertLog {
   final String message;
@@ -26,12 +26,14 @@ class AlertLog {
     required this.type,
   });
 
+  // Convert to Json
   Map<String, dynamic> toJson() => {
         'message': message,
         'timestamp': timestamp.toIso8601String(),
         'type': type.name,
       };
 
+  // Convert to Object
   factory AlertLog.fromJson(Map<String, dynamic> json) => AlertLog(
         message: json['message'],
         timestamp: DateTime.parse(json['timestamp']),
@@ -39,7 +41,7 @@ class AlertLog {
       );
 }
 
-enum HomeState { Initial, Loading, Loaded, Error }
+enum HomeState { Initial, Loading, Loaded, Error } // Trạng thái tổng của màn
 
 class HomeProvider extends ChangeNotifier {
   final GetRoomsUseCase getRoomsUseCase;
