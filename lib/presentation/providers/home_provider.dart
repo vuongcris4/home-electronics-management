@@ -11,7 +11,8 @@ import '../../domain/entities/room.dart';
 import '../../domain/repositories.dart';
 
 // --- ENUMS & MODELS ---
-enum AlertType { info, warning }
+// [UPDATE] Chỉ giữ lại type info
+enum AlertType { info }
 
 class AlertLog {
   final String message;
@@ -33,7 +34,11 @@ class AlertLog {
   factory AlertLog.fromJson(Map<String, dynamic> json) => AlertLog(
         message: json['message'],
         timestamp: DateTime.parse(json['timestamp']),
-        type: AlertType.values.firstWhere((e) => e.name == json['type']),
+        // [UPDATE] Fallback về info nếu json cũ có warning
+        type: AlertType.values.firstWhere(
+          (e) => e.name == json['type'],
+          orElse: () => AlertType.info,
+        ),
       );
 }
 
@@ -420,6 +425,8 @@ class HomeProvider extends ChangeNotifier {
         Device updatedDevice;
 
         final bool? newIsOn = attributes['is_on'] as bool?;
+        
+        // [UPDATE] Chỉ giữ logic log khi Bật/Tắt thiết bị (Info)
         if (newIsOn != null && newIsOn != currentDevice.isOn) {
           final roomName = _rooms[roomIndex].name;
           _addLog(
@@ -428,16 +435,7 @@ class HomeProvider extends ChangeNotifier {
           );
         }
 
-        if (currentDevice is DimmableLightDevice) {
-          final int? newBrightness = attributes['brightness'] as int?;
-          if (newBrightness != null && newBrightness > 90) {
-            final roomName = _rooms[roomIndex].name;
-            _addLog(
-              'Warning: ${currentDevice.name} in "$roomName" brightness is at $newBrightness% (above 90% threshold).',
-              AlertType.warning,
-            );
-          }
-        }
+        // [UPDATE] Đã xóa phần logic Warning khi độ sáng > 90
 
         if (currentDevice is DimmableLightDevice) {
           updatedDevice = currentDevice.copyWith(

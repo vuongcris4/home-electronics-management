@@ -3,22 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/home_provider.dart';
-import '../widgets/home_header.dart'; // <-- Import HomeHeader
+import '../widgets/home_header.dart';
 
 const Color kPrimaryColor = Color(0xFF2666DE);
 
 class AlertsScreen extends StatelessWidget {
   const AlertsScreen({super.key});
 
-  // Đã xóa hàm _logout vì logic này đã nằm trong HomeHeader
-
   /// Widget to build each log/alert card.
   Widget _buildAlertCard(AlertLog alert) {
-    final bool isWarning = alert.type == AlertType.warning;
-    final Color cardColor = isWarning ? Colors.orange.shade50 : Colors.white;
-    final Color iconColor = isWarning ? Colors.orange.shade800 : kPrimaryColor;
-    final IconData iconData =
-        isWarning ? Icons.warning_amber_rounded : Icons.info_outline;
+    // [UPDATE] Vì chỉ còn type Info nên không cần check warning nữa
+    // Luôn sử dụng style mặc định (nền trắng, icon xanh)
+    const Color cardColor = Colors.white;
+    const Color iconColor = kPrimaryColor;
+    const IconData iconData = Icons.info_outline;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -37,7 +35,7 @@ class AlertsScreen extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(iconData, color: iconColor, size: 24),
+          const Icon(iconData, color: iconColor, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -70,10 +68,12 @@ class AlertsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // HEADER: Sử dụng lại HomeHeader thay vì viết lại code
+          // HEADER
           const HomeHeader(),
           
           const SizedBox(height: 24),
+
+          // Activity logs Title
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Center(
@@ -97,9 +97,10 @@ class AlertsScreen extends StatelessWidget {
                 ],
               ),
             ),
-        ),
+          ),
           const SizedBox(height: 20),
-          // LIST OF LOGS AND ALERTS
+          
+          // LIST OF LOGS
           Expanded(
             child: Consumer<HomeProvider>(
               builder: (context, provider, child) {
