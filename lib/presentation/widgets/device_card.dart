@@ -57,21 +57,7 @@ class DeviceCard extends StatelessWidget {
                   height: 32,
                   color: iconColor,
                   errorBuilder: (context, error, stackTrace) {
-                    // ===================== GHI CHÚ QUAN TRỌNG =====================
-                    // Nếu bạn thấy icon dấu chấm than (!), có nghĩa là Flutter
-                    // không tìm thấy file ảnh tại đường dẫn `device.iconAsset`.
-                    //
-                    // Vui lòng kiểm tra 2 điều sau:
-                    // 1. Trong file `pubspec.yaml`, bạn ĐÃ khai báo thư mục assets:
-                    //
-                    // flutter:
-                    //   assets:
-                    //     - assets/icons/
-                    //     - assets/img/
-                    //
-                    // 2. Thư mục `assets/icons/` thật sự tồn tại trong dự án của bạn
-                    //    và chứa các file icon (vd: 'lightbulb.png').
-                    // =============================================================
+                    
                     print("Error loading asset: ${device.iconAsset} - $error");
                     return Icon(Icons.error, color: iconColor, size: 32);
                   },

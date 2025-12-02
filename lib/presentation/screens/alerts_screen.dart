@@ -1,34 +1,16 @@
 // lib/presentation/screens/alerts_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../injection_container.dart';
-import '../providers/auth_provider.dart';
 import '../providers/home_provider.dart';
+import '../widgets/home_header.dart'; // <-- Import HomeHeader
 
 const Color kPrimaryColor = Color(0xFF2666DE);
 
 class AlertsScreen extends StatelessWidget {
   const AlertsScreen({super.key});
 
-  // ===================== MODIFIED METHOD =====================
-  /// Handles user logout by clearing all local data, tokens, and navigating to the login screen.
-  Future<void> _logout(BuildContext context) async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final homeProvider = Provider.of<HomeProvider>(context, listen: false);
-    authProvider.clearUserData();
-    await homeProvider.clearLocalData();
-
-    final storage = getIt<FlutterSecureStorage>();
-    await storage.delete(key: 'access_token');
-    await storage.delete(key: 'refresh_token');
-
-    if (context.mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-    }
-  }
-  // ===================== END OF MODIFIED METHOD =====================
+  // Đã xóa hàm _logout vì logic này đã nằm trong HomeHeader
 
   /// Widget to build each log/alert card.
   Widget _buildAlertCard(AlertLog alert) {
@@ -83,66 +65,14 @@ class AlertsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String currentDate =
-        DateFormat('MMMM d, yyyy').format(DateTime.now());
-
     return SafeArea(
       bottom: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // HEADER
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      currentDate, // Dynamic date
-                      style:
-                          const TextStyle(fontSize: 14, color: Colors.black54),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Smart home',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 26,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(
-                  width: 44,
-                  height: 44,
-                  child: IconButton(
-                    padding: EdgeInsets.zero,
-                    icon: Image.asset('assets/icons/exit.png', ),
-                    onPressed: () => _logout(context),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // HEADER: Sử dụng lại HomeHeader thay vì viết lại code
+          const HomeHeader(),
+          
           const SizedBox(height: 24),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),

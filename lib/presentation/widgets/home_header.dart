@@ -14,7 +14,6 @@ const Color kTextColorSecondary = Color(0xFF6F7EA8);
 class HomeHeader extends StatelessWidget {
   const HomeHeader({super.key});
 
-  // ===================== MODIFIED METHOD =====================
   Future<void> _logout(BuildContext context) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final homeProvider = Provider.of<HomeProvider>(context, listen: false);
@@ -29,7 +28,6 @@ class HomeHeader extends StatelessWidget {
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     }
   }
-  // ===================== END OF MODIFIED METHOD =====================
 
   @override
   Widget build(BuildContext context) {

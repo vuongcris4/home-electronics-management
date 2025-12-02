@@ -1,22 +1,13 @@
 // lib/presentation/screens/home_screen.dart
 
-// Import thư viện Material UI cơ bản của Flutter
 import 'package:flutter/material.dart';
-// Import Provider để quản lý state
 import 'package:provider/provider.dart';
-// Import HomeProvider (quản lý state cho rooms, devices)
 import '../providers/home_provider.dart';
-// Import widget 'DeviceCard' (hiển thị 1 ô thiết bị)
 import '../widgets/device_card.dart';
-// Import widget 'HomeHeader' (hiwwển thị tiêu đề "Control Home")
 import '../widgets/home_header.dart';
-// Import widget 'RoomTabs' (thanh chọn phòng)
 import '../widgets/room_tabs.dart';
-// Import widget 'HomeBottomNavBar' (thanh điều hướng dưới cùng)
 import '../widgets/home_bottom_nav_bar.dart';
-// Import màn hình 'AlertsScreen'
-import './alerts_screen.dart'; // <-- 1. IMPORT ALERTS SCREEN
-// Import màn hình 'ProfileScreen' (do file tên là account.dart)
+import './alerts_screen.dart';
 import './account.dart';
 
 // Hằng số định nghĩa màu nền chính cho màn hình

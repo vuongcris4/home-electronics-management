@@ -42,10 +42,8 @@ class RoomTabs extends StatelessWidget {
                                 const EdgeInsets.symmetric(horizontal: 12.0),
                             child: GestureDetector(
                               onTap: () => provider.selectRoom(index),
-                              // ===================== THÊM MỚI =====================
                               onLongPress: () =>
                                   _showEditRoomDialog(context, room),
-                              // ===================== KẾT THÚC =====================
                               child: _RoomTabItem(
                                 text: room.name,
                                 isActive: provider.selectedRoomIndex == index,
@@ -66,7 +64,6 @@ class RoomTabs extends StatelessWidget {
     );
   }
 
-  // ===================== CẬP NHẬT =====================
   void _showDeleteRoomConfirmation(BuildContext context) {
     final provider = Provider.of<HomeProvider>(context, listen: false);
 
@@ -112,9 +109,6 @@ class RoomTabs extends StatelessWidget {
       ),
     );
   }
-  // ===================== KẾT THÚC CẬP NHẬT =====================
-
-  // ===================== THÊM MỚI =====================
   void _showEditRoomDialog(BuildContext context, Room room) {
     final nameController = TextEditingController(text: room.name);
     final formKey = GlobalKey<FormState>();
@@ -154,7 +148,6 @@ class RoomTabs extends StatelessWidget {
       ),
     );
   }
-  // ===================== KẾT THÚC =====================
 }
 
 class _RoomTabItem extends StatelessWidget {
