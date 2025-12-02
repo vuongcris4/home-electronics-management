@@ -7,13 +7,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../core/error/app_error.dart';
-import '../../core/usecase/usecase.dart';
 import '../../domain/entities/device.dart';
 import '../../domain/entities/room.dart';
-import '../../domain/usecases/device_usecases.dart';
-import '../../domain/usecases/room_usecases.dart';
+import '../../domain/repositories.dart'; // Import Repository Interfaces
 
-enum AlertType { info, warning }  // Trạng thái thông báo
+enum AlertType { info, warning } 
 
 class AlertLog {
   final String message;
@@ -26,14 +24,12 @@ class AlertLog {
     required this.type,
   });
 
-  // Convert to Json
   Map<String, dynamic> toJson() => {
         'message': message,
         'timestamp': timestamp.toIso8601String(),
         'type': type.name,
       };
 
-  // Convert to Object
   factory AlertLog.fromJson(Map<String, dynamic> json) => AlertLog(
         message: json['message'],
         timestamp: DateTime.parse(json['timestamp']),
@@ -41,27 +37,19 @@ class AlertLog {
       );
 }
 
-enum HomeState { Initial, Loading, Loaded, Error } // Trạng thái tổng của màn
+enum HomeState { Initial, Loading, Loaded, Error }
 
 class HomeProvider extends ChangeNotifier {
-  final GetRoomsUseCase getRoomsUseCase;
-  final AddRoomUseCase addRoomUseCase;
-  final DeleteRoomUseCase deleteRoomUseCase;
-  final UpdateRoomUseCase updateRoomUseCase;
-  final AddDeviceUseCase addDeviceUseCase;
-  final DeleteDeviceUseCase deleteDeviceUseCase;
-  final UpdateDeviceUseCase updateDeviceUseCase;
+  // Thay thế UseCases bằng Repositories
+  final RoomRepository roomRepository;
+  final DeviceRepository deviceRepository;
+  
   final FlutterSecureStorage storage;
   final SharedPreferences sharedPreferences;
 
   HomeProvider({
-    required this.getRoomsUseCase,
-    required this.addRoomUseCase,
-    required this.deleteRoomUseCase,
-    required this.updateRoomUseCase,
-    required this.addDeviceUseCase,
-    required this.deleteDeviceUseCase,
-    required this.updateDeviceUseCase,
+    required this.roomRepository,
+    required this.deviceRepository,
     required this.storage,
     required this.sharedPreferences,
   }) {
@@ -138,7 +126,8 @@ class HomeProvider extends ChangeNotifier {
     _state = HomeState.Loading;
     notifyListeners();
 
-    final result = await getRoomsUseCase(NoParams());
+    // Gọi trực tiếp repository
+    final result = await roomRepository.getRooms();
 
     result.fold(
       (failure) {
@@ -293,7 +282,8 @@ class HomeProvider extends ChangeNotifier {
   Future<bool> addNewRoom(String name) async {
     _isLoadingAction = true;
     notifyListeners();
-    final result = await addRoomUseCase(AddRoomParams(name: name));
+    // Gọi trực tiếp repository
+    final result = await roomRepository.addRoom(name);
     _isLoadingAction = false;
 
     return result.fold(
@@ -318,8 +308,8 @@ class HomeProvider extends ChangeNotifier {
 
     _isLoadingAction = true;
     notifyListeners();
-    final result =
-        await deleteRoomUseCase(DeleteRoomParams(roomId: selectedRoom!.id));
+    // Gọi trực tiếp repository
+    final result = await roomRepository.deleteRoom(selectedRoom!.id);
     _isLoadingAction = false;
 
     return result.fold(
@@ -357,13 +347,14 @@ class HomeProvider extends ChangeNotifier {
     _isLoadingAction = true;
     notifyListeners();
 
-    final params = AddDeviceParams(
-        name: name,
-        subtitle: subtitle,
-        iconAsset: iconAsset,
-        roomId: selectedRoom!.id,
-        deviceType: deviceType);
-    final result = await addDeviceUseCase(params);
+    // Gọi trực tiếp repository
+    final result = await deviceRepository.addDevice(
+      name,
+      subtitle,
+      iconAsset,
+      selectedRoom!.id,
+      deviceType,
+    );
     _isLoadingAction = false;
 
     return result.fold(
@@ -391,8 +382,8 @@ class HomeProvider extends ChangeNotifier {
   Future<bool> removeDevice(int deviceId) async {
     _isLoadingAction = true;
     notifyListeners();
-    final result =
-        await deleteDeviceUseCase(DeleteDeviceParams(deviceId: deviceId));
+    // Gọi trực tiếp repository
+    final result = await deviceRepository.deleteDevice(deviceId);
     _isLoadingAction = false;
 
     return result.fold((failure) {
@@ -419,7 +410,8 @@ class HomeProvider extends ChangeNotifier {
   Future<bool> updateRoomName(int roomId, String newName) async {
     _isLoadingAction = true;
     notifyListeners();
-    final result = await updateRoomUseCase(UpdateRoomParams(id: roomId, name: newName));
+    // Gọi trực tiếp repository
+    final result = await roomRepository.updateRoom(roomId, newName);
     _isLoadingAction = false;
 
     return result.fold(
@@ -444,8 +436,9 @@ class HomeProvider extends ChangeNotifier {
       int deviceId, String newName, String newSubtitle) async {
     _isLoadingAction = true;
     notifyListeners();
-    final result = await updateDeviceUseCase(UpdateDeviceParams(
-        id: deviceId, name: newName, subtitle: newSubtitle));
+    // Gọi trực tiếp repository
+    final result = await deviceRepository.updateDevice(
+        deviceId, newName, newSubtitle);
     _isLoadingAction = false;
 
     return result.fold(

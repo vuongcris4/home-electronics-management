@@ -1,13 +1,15 @@
 // lib/infrastructure/device/device_repository_impl.dart
 import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
+
 import '../../core/error/app_error.dart';
 import '../../domain/entities/device.dart';
 import '../../domain/repositories.dart';
-import 'device_data_source.dart';
 
 class DeviceRepositoryImpl implements DeviceRepository {
-  final DeviceRemoteDataSource remote;
-  DeviceRepositoryImpl({required this.remote});
+  final Dio dio;
+
+  DeviceRepositoryImpl({required this.dio});
 
   @override
   Future<Either<Failure, Device>> addDevice(
@@ -18,21 +20,36 @@ class DeviceRepositoryImpl implements DeviceRepository {
     DeviceType deviceType,
   ) async {
     try {
-      final dev =
-          await remote.addDevice(name, subtitle, iconAsset, roomId, deviceType);
-      return Right(dev);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      final res = await dio.post(
+        '/devices/',
+        data: {
+          'name': name,
+          'subtitle': subtitle,
+          'icon_asset': iconAsset,
+          'room': roomId,
+          'device_type': deviceType.name,
+        },
+      );
+      return Right(Device.fromJson(res.data));
+    } on DioException {
+      return const Left(ServerFailure("Failed to add device"));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
   }
 
   @override
   Future<Either<Failure, Unit>> deleteDevice(int deviceId) async {
     try {
-      await remote.deleteDevice(deviceId);
+      final res = await dio.delete('/devices/$deviceId/');
+      if (res.statusCode != 204) {
+         return const Left(ServerFailure("Failed to delete device"));
+      }
       return const Right(unit);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+    } on DioException {
+      return const Left(ServerFailure("Failed to delete device"));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
   }
 
@@ -40,10 +57,18 @@ class DeviceRepositoryImpl implements DeviceRepository {
   Future<Either<Failure, Device>> updateDevice(
       int deviceId, String name, String subtitle) async {
     try {
-      final device = await remote.updateDevice(deviceId, name, subtitle);
-      return Right(device);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      final res = await dio.put(
+        '/devices/$deviceId/',
+        data: {
+          'name': name,
+          'subtitle': subtitle,
+        },
+      );
+      return Right(Device.fromJson(res.data));
+    } on DioException catch (e) {
+      return Left(ServerFailure(e.response?.data['detail'] ?? "Failed to update device"));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
   }
 }

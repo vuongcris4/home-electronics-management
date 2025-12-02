@@ -1,23 +1,17 @@
 // lib/presentation/providers/auth_provider.dart
 import 'package:flutter/material.dart';
 import '../../core/error/app_error.dart';
-import '../../core/usecase/usecase.dart';
 import '../../domain/entities/user.dart';
-import '../../domain/usecases/auth_usecases.dart';
+import '../../domain/repositories.dart'; // Import Repository interface
 
 enum ViewState { Idle, Loading, Success, Error }
 
 class AuthProvider extends ChangeNotifier {
-  final LoginUseCase loginUseCase;
-  final RegisterUseCase registerUseCase;
-  final GetUserProfileUseCase getUserProfileUseCase;
-  final UpdateUserProfileUseCase updateUserProfileUseCase;
+  // Thay thế UseCases bằng Repository
+  final AuthRepository authRepository;
 
   AuthProvider({
-    required this.loginUseCase,
-    required this.registerUseCase,
-    required this.getUserProfileUseCase,
-    required this.updateUserProfileUseCase,
+    required this.authRepository,
   });
 
   ViewState _loginState = ViewState.Idle;
@@ -70,8 +64,9 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> login(String email, String password) async {
     _setLoginState(ViewState.Loading);
-    final result =
-        await loginUseCase(LoginParams(email: email, password: password));
+    
+    // Gọi trực tiếp repository
+    final result = await authRepository.login(email, password);
 
     bool isSuccess = false;
     result.fold(
@@ -98,14 +93,14 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     _setRegisterState(ViewState.Loading);
 
-    final params = RegisterParams(
+    // Gọi trực tiếp repository
+    final result = await authRepository.register(
       name: name,
       email: email,
       password: password,
       password2: password2,
       phoneNumber: phoneNumber,
     );
-    final result = await registerUseCase(params);
 
     bool isSuccess = false;
     result.fold(
@@ -127,7 +122,9 @@ class AuthProvider extends ChangeNotifier {
     if (_profileState == ViewState.Loading || _user != null) return;
 
     _setProfileState(ViewState.Loading);
-    final result = await getUserProfileUseCase(NoParams());
+    
+    // Gọi trực tiếp repository
+    final result = await authRepository.getUserProfile();
 
     result.fold(
       (failure) {
@@ -148,8 +145,11 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     _setUpdateProfileState(ViewState.Loading);
 
-    final params = UpdateUserParams(name: name, phoneNumber: phoneNumber);
-    final result = await updateUserProfileUseCase(params);
+    // Gọi trực tiếp repository
+    final result = await authRepository.updateUserProfile(
+      name: name,
+      phoneNumber: phoneNumber,
+    );
 
     bool isSuccess = false;
     result.fold(
@@ -170,6 +170,4 @@ class AuthProvider extends ChangeNotifier {
 
     return isSuccess;
   }
-
-
 }
