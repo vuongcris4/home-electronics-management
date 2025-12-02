@@ -1,23 +1,24 @@
 // lib/domain/repositories.dart
-import 'package:dartz/dartz.dart';
-
-import '../core/error/app_error.dart';
 import 'entities/device.dart';
 import 'entities/room.dart';
 import 'entities/user.dart';
 
 //--- Auth Repository ---
 abstract class AuthRepository {
-  Future<Either<Failure, Unit>> login(String email, String password);
-  Future<Either<Failure, Unit>> register({
+  // Login xong không cần trả về gì, lỗi thì throw, thành công thì thôi
+  Future<void> login(String email, String password); 
+  
+  Future<void> register({
     required String name,
     required String email,
     required String password,
     required String password2,
     required String phoneNumber,
   });
-  Future<Either<Failure, User>> getUserProfile();
-  Future<Either<Failure, User>> updateUserProfile({
+
+  Future<User> getUserProfile();
+  
+  Future<User> updateUserProfile({
     required String name,
     required String phoneNumber,
   });
@@ -25,15 +26,17 @@ abstract class AuthRepository {
 
 //--- Device Repository ---
 abstract class DeviceRepository {
-  Future<Either<Failure, Device>> addDevice(
+  Future<Device> addDevice(
     String name,
     String subtitle,
     String iconAsset,
     int roomId,
     DeviceType deviceType,
   );
-  Future<Either<Failure, Unit>> deleteDevice(int deviceId);
-  Future<Either<Failure, Device>> updateDevice(
+  
+  Future<void> deleteDevice(int deviceId);
+  
+  Future<Device> updateDevice(
     int deviceId,
     String name,
     String subtitle,
@@ -42,8 +45,8 @@ abstract class DeviceRepository {
 
 //--- Room Repository ---
 abstract class RoomRepository {
-  Future<Either<Failure, List<Room>>> getRooms();
-  Future<Either<Failure, Room>> addRoom(String name);
-  Future<Either<Failure, Unit>> deleteRoom(int roomId);
-  Future<Either<Failure, Room>> updateRoom(int roomId, String name);
+  Future<List<Room>> getRooms();
+  Future<Room> addRoom(String name);
+  Future<void> deleteRoom(int roomId);
+  Future<Room> updateRoom(int roomId, String name);
 }

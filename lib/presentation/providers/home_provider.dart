@@ -6,12 +6,12 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-import '../../core/error/app_error.dart';
 import '../../domain/entities/device.dart';
 import '../../domain/entities/room.dart';
-import '../../domain/repositories.dart'; // Import Repository Interfaces
+import '../../domain/repositories.dart';
 
-enum AlertType { info, warning } 
+// --- ENUMS & MODELS ---
+enum AlertType { info, warning }
 
 class AlertLog {
   final String message;
@@ -39,11 +39,11 @@ class AlertLog {
 
 enum HomeState { Initial, Loading, Loaded, Error }
 
+// --- PROVIDER ---
 class HomeProvider extends ChangeNotifier {
-  // Thay thế UseCases bằng Repositories
   final RoomRepository roomRepository;
   final DeviceRepository deviceRepository;
-  
+
   final FlutterSecureStorage storage;
   final SharedPreferences sharedPreferences;
 
@@ -56,6 +56,7 @@ class HomeProvider extends ChangeNotifier {
     _loadAlerts();
   }
 
+  // --- STATES ---
   HomeState _state = HomeState.Initial;
   HomeState get state => _state;
 
@@ -65,10 +66,9 @@ class HomeProvider extends ChangeNotifier {
   int _selectedRoomIndex = -1;
   int get selectedRoomIndex => _selectedRoomIndex;
 
-  Room? get selectedRoom =>
-      (_selectedRoomIndex >= 0 && _rooms.isNotEmpty)
-          ? _rooms[_selectedRoomIndex]
-          : null;
+  Room? get selectedRoom => (_selectedRoomIndex >= 0 && _rooms.isNotEmpty)
+      ? _rooms[_selectedRoomIndex]
+      : null;
 
   String _errorMessage = '';
   String get errorMessage => _errorMessage;
@@ -76,13 +76,16 @@ class HomeProvider extends ChangeNotifier {
   bool _isLoadingAction = false;
   bool get isLoadingAction => _isLoadingAction;
 
+  // WebSocket
   WebSocketChannel? _channel;
   StreamSubscription? _channelSubscription;
 
+  // Alerts
   List<AlertLog> _alerts = [];
   List<AlertLog> get alerts => _alerts;
-
   static const _alertsKey = 'alert_logs';
+
+  // --- HELPER METHODS ---
 
   Future<void> clearLocalData() async {
     _channelSubscription?.cancel();
@@ -122,33 +125,6 @@ class HomeProvider extends ChangeNotifier {
     _saveAlerts();
   }
 
-  Future<void> fetchRooms() async {
-    _state = HomeState.Loading;
-    notifyListeners();
-
-    // Gọi trực tiếp repository
-    final result = await roomRepository.getRooms();
-
-    result.fold(
-      (failure) {
-        _errorMessage =
-            failure is ServerFailure ? failure.message : 'Unknown Error';
-        _state = HomeState.Error;
-      },
-      (roomData) {
-        _rooms = roomData;
-        _state = HomeState.Loaded;
-        if (_rooms.isNotEmpty) {
-          _selectedRoomIndex = 0;
-          connectToWebSocket(_rooms.first.id);
-        } else {
-          _selectedRoomIndex = -1;
-        }
-      },
-    );
-    notifyListeners();
-  }
-
   void selectRoom(int index) {
     if (index >= 0 && index < _rooms.length) {
       _selectedRoomIndex = index;
@@ -156,6 +132,227 @@ class HomeProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Device? findDeviceById(int deviceId) {
+    try {
+      for (final room in _rooms) {
+        final device = room.devices.cast<Device?>().firstWhere(
+              (d) => d?.id == deviceId,
+              orElse: () => null,
+            );
+        if (device != null) return device;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // --- API / REPOSITORY METHODS (Using Try-Catch) ---
+
+  Future<void> fetchRooms() async {
+    _state = HomeState.Loading;
+    notifyListeners();
+
+    try {
+      _rooms = await roomRepository.getRooms();
+      _state = HomeState.Loaded;
+
+      if (_rooms.isNotEmpty) {
+        _selectedRoomIndex = 0;
+        connectToWebSocket(_rooms.first.id);
+      } else {
+        _selectedRoomIndex = -1;
+      }
+    } catch (e) {
+      // Loại bỏ tiền tố "Exception: " để message sạch đẹp hơn
+      _errorMessage = e.toString().replaceAll("Exception: ", "");
+      _state = HomeState.Error;
+    }
+    notifyListeners();
+  }
+
+  Future<bool> addNewRoom(String name) async {
+    _isLoadingAction = true;
+    notifyListeners();
+
+    try {
+      final newRoom = await roomRepository.addRoom(name);
+      _rooms.add(newRoom);
+      _selectedRoomIndex = _rooms.length - 1;
+      connectToWebSocket(newRoom.id);
+      
+      _isLoadingAction = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll("Exception: ", "");
+      _isLoadingAction = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> removeSelectedRoom() async {
+    if (selectedRoom == null) return false;
+
+    _isLoadingAction = true;
+    notifyListeners();
+
+    try {
+      await roomRepository.deleteRoom(selectedRoom!.id);
+      
+      _rooms.removeAt(_selectedRoomIndex);
+      _selectedRoomIndex = _rooms.isNotEmpty ? 0 : -1;
+      
+      if (selectedRoom != null) {
+        connectToWebSocket(selectedRoom!.id);
+      } else {
+        _channelSubscription?.cancel();
+        _channel?.sink.close();
+        _channel = null;
+      }
+
+      _isLoadingAction = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll("Exception: ", "");
+      _isLoadingAction = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> addNewDevice(
+    String name,
+    String subtitle,
+    String iconAsset,
+    DeviceType deviceType,
+  ) async {
+    if (selectedRoom == null) return false;
+
+    _isLoadingAction = true;
+    notifyListeners();
+
+    try {
+      final newDevice = await deviceRepository.addDevice(
+        name,
+        subtitle,
+        iconAsset,
+        selectedRoom!.id,
+        deviceType,
+      );
+
+      // Cập nhật local list
+      final roomIndex =
+          _rooms.indexWhere((room) => room.id == selectedRoom!.id);
+      if (roomIndex != -1) {
+        final updatedDevices = List<Device>.from(_rooms[roomIndex].devices)
+          ..add(newDevice);
+        _rooms[roomIndex] =
+            _rooms[roomIndex].copyWith(devices: updatedDevices);
+      }
+
+      _isLoadingAction = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll("Exception: ", "");
+      _isLoadingAction = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> removeDevice(int deviceId) async {
+    _isLoadingAction = true;
+    notifyListeners();
+
+    try {
+      await deviceRepository.deleteDevice(deviceId);
+
+      // Cập nhật local list
+      final roomIndex = _rooms.indexWhere(
+          (room) => room.devices.any((device) => device.id == deviceId));
+
+      if (roomIndex != -1) {
+        final updatedDevices = List<Device>.from(_rooms[roomIndex].devices)
+          ..removeWhere((d) => d.id == deviceId);
+        _rooms[roomIndex] =
+            _rooms[roomIndex].copyWith(devices: updatedDevices);
+      }
+
+      _isLoadingAction = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll("Exception: ", "");
+      _isLoadingAction = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateRoomName(int roomId, String newName) async {
+    _isLoadingAction = true;
+    notifyListeners();
+
+    try {
+      final updatedRoom = await roomRepository.updateRoom(roomId, newName);
+
+      final index = _rooms.indexWhere((room) => room.id == roomId);
+      if (index != -1) {
+        _rooms[index] = _rooms[index].copyWith(name: updatedRoom.name);
+      }
+
+      _isLoadingAction = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll("Exception: ", "");
+      _isLoadingAction = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateDeviceDetails(
+      int deviceId, String newName, String newSubtitle) async {
+    _isLoadingAction = true;
+    notifyListeners();
+
+    try {
+      final updatedDevice = await deviceRepository.updateDevice(
+          deviceId, newName, newSubtitle);
+
+      for (int i = 0; i < _rooms.length; i++) {
+        final deviceIndex =
+            _rooms[i].devices.indexWhere((d) => d.id == deviceId);
+        if (deviceIndex != -1) {
+          final newDevices = List<Device>.from(_rooms[i].devices);
+          
+          newDevices[deviceIndex] = newDevices[deviceIndex].copyWith(
+            name: updatedDevice.name,
+            subtitle: updatedDevice.subtitle,
+          );
+          _rooms[i] = _rooms[i].copyWith(devices: newDevices);
+          break;
+        }
+      }
+
+      _isLoadingAction = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll("Exception: ", "");
+      _isLoadingAction = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // --- WEBSOCKET LOGIC ---
 
   Future<void> connectToWebSocket(int roomId) async {
     _channelSubscription?.cancel();
@@ -262,212 +459,6 @@ class HomeProvider extends ChangeNotifier {
       }
     }
     notifyListeners();
-  }
-
-  Device? findDeviceById(int deviceId) {
-    try {
-      for (final room in _rooms) {
-        final device = room.devices.cast<Device?>().firstWhere(
-              (d) => d?.id == deviceId,
-              orElse: () => null,
-            );
-        if (device != null) return device;
-      }
-      return null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<bool> addNewRoom(String name) async {
-    _isLoadingAction = true;
-    notifyListeners();
-    // Gọi trực tiếp repository
-    final result = await roomRepository.addRoom(name);
-    _isLoadingAction = false;
-
-    return result.fold(
-      (failure) {
-        _errorMessage =
-            failure is ServerFailure ? failure.message : 'Failed to add room';
-        notifyListeners();
-        return false;
-      },
-      (newRoom) {
-        _rooms.add(newRoom);
-        _selectedRoomIndex = _rooms.length - 1;
-        connectToWebSocket(newRoom.id);
-        notifyListeners();
-        return true;
-      },
-    );
-  }
-
-  Future<bool> removeSelectedRoom() async {
-    if (selectedRoom == null) return false;
-
-    _isLoadingAction = true;
-    notifyListeners();
-    // Gọi trực tiếp repository
-    final result = await roomRepository.deleteRoom(selectedRoom!.id);
-    _isLoadingAction = false;
-
-    return result.fold(
-      (failure) {
-        _errorMessage = failure is ServerFailure
-            ? failure.message
-            : 'Failed to delete room';
-        notifyListeners();
-        return false;
-      },
-      (_) {
-        _rooms.removeAt(_selectedRoomIndex);
-        _selectedRoomIndex = _rooms.isNotEmpty ? 0 : -1;
-        if (selectedRoom != null) {
-          connectToWebSocket(selectedRoom!.id);
-        } else {
-          _channelSubscription?.cancel();
-          _channel?.sink.close();
-          _channel = null;
-        }
-        notifyListeners();
-        return true;
-      },
-    );
-  }
-
-  Future<bool> addNewDevice(
-    String name,
-    String subtitle,
-    String iconAsset,
-    DeviceType deviceType,
-  ) async {
-    if (selectedRoom == null) return false;
-
-    _isLoadingAction = true;
-    notifyListeners();
-
-    // Gọi trực tiếp repository
-    final result = await deviceRepository.addDevice(
-      name,
-      subtitle,
-      iconAsset,
-      selectedRoom!.id,
-      deviceType,
-    );
-    _isLoadingAction = false;
-
-    return result.fold(
-      (failure) {
-        _errorMessage =
-            failure is ServerFailure ? failure.message : 'Failed to add device';
-        notifyListeners();
-        return false;
-      },
-      (newDevice) {
-        final roomIndex =
-            _rooms.indexWhere((room) => room.id == selectedRoom!.id);
-        if (roomIndex != -1) {
-          final updatedDevices = List<Device>.from(_rooms[roomIndex].devices)
-            ..add(newDevice);
-          _rooms[roomIndex] =
-              _rooms[roomIndex].copyWith(devices: updatedDevices);
-        }
-        notifyListeners();
-        return true;
-      },
-    );
-  }
-
-  Future<bool> removeDevice(int deviceId) async {
-    _isLoadingAction = true;
-    notifyListeners();
-    // Gọi trực tiếp repository
-    final result = await deviceRepository.deleteDevice(deviceId);
-    _isLoadingAction = false;
-
-    return result.fold((failure) {
-      _errorMessage = failure is ServerFailure
-          ? failure.message
-          : 'Failed to delete device';
-      notifyListeners();
-      return false;
-    }, (_) {
-      final roomIndex = _rooms.indexWhere(
-          (room) => room.devices.any((device) => device.id == deviceId));
-
-      if (roomIndex != -1) {
-        final updatedDevices = List<Device>.from(_rooms[roomIndex].devices)
-          ..removeWhere((d) => d.id == deviceId);
-        _rooms[roomIndex] =
-            _rooms[roomIndex].copyWith(devices: updatedDevices);
-      }
-      notifyListeners();
-      return true;
-    });
-  }
-
-  Future<bool> updateRoomName(int roomId, String newName) async {
-    _isLoadingAction = true;
-    notifyListeners();
-    // Gọi trực tiếp repository
-    final result = await roomRepository.updateRoom(roomId, newName);
-    _isLoadingAction = false;
-
-    return result.fold(
-      (failure) {
-        _errorMessage =
-            failure is ServerFailure ? failure.message : 'Failed to update room';
-        notifyListeners();
-        return false;
-      },
-      (updatedRoom) {
-        final index = _rooms.indexWhere((room) => room.id == roomId);
-        if (index != -1) {
-          _rooms[index] = _rooms[index].copyWith(name: updatedRoom.name);
-        }
-        notifyListeners();
-        return true;
-      },
-    );
-  }
-
-  Future<bool> updateDeviceDetails(
-      int deviceId, String newName, String newSubtitle) async {
-    _isLoadingAction = true;
-    notifyListeners();
-    // Gọi trực tiếp repository
-    final result = await deviceRepository.updateDevice(
-        deviceId, newName, newSubtitle);
-    _isLoadingAction = false;
-
-    return result.fold(
-      (failure) {
-        _errorMessage = failure is ServerFailure
-            ? failure.message
-            : 'Failed to update device';
-        notifyListeners();
-        return false;
-      },
-      (updatedDevice) {
-        for (int i = 0; i < _rooms.length; i++) {
-          final deviceIndex =
-              _rooms[i].devices.indexWhere((d) => d.id == deviceId);
-          if (deviceIndex != -1) {
-            final newDevices = List<Device>.from(_rooms[i].devices);
-            
-            newDevices[deviceIndex] = newDevices[deviceIndex].copyWith(
-              name: updatedDevice.name,
-              subtitle: updatedDevice.subtitle,
-            );
-            _rooms[i] = _rooms[i].copyWith(devices: newDevices);
-            break;
-          }
-        }
-        notifyListeners();
-        return true;
-      },
-    );
   }
 
   @override

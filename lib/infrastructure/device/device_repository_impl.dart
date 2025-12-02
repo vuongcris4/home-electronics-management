@@ -1,8 +1,5 @@
 // lib/infrastructure/device/device_repository_impl.dart
-import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
-
-import '../../core/error/app_error.dart';
 import '../../domain/entities/device.dart';
 import '../../domain/repositories.dart';
 
@@ -12,13 +9,7 @@ class DeviceRepositoryImpl implements DeviceRepository {
   DeviceRepositoryImpl({required this.dio});
 
   @override
-  Future<Either<Failure, Device>> addDevice(
-    String name,
-    String subtitle,
-    String iconAsset,
-    int roomId,
-    DeviceType deviceType,
-  ) async {
+  Future<Device> addDevice(String name, String subtitle, String iconAsset, int roomId, DeviceType deviceType) async {
     try {
       final res = await dio.post(
         '/devices/',
@@ -30,32 +21,23 @@ class DeviceRepositoryImpl implements DeviceRepository {
           'device_type': deviceType.name,
         },
       );
-      return Right(Device.fromJson(res.data));
-    } on DioException {
-      return const Left(ServerFailure("Failed to add device"));
+      return Device.fromJson(res.data);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      throw Exception("Failed to add device: $e");
     }
   }
 
   @override
-  Future<Either<Failure, Unit>> deleteDevice(int deviceId) async {
+  Future<void> deleteDevice(int deviceId) async {
     try {
-      final res = await dio.delete('/devices/$deviceId/');
-      if (res.statusCode != 204) {
-         return const Left(ServerFailure("Failed to delete device"));
-      }
-      return const Right(unit);
-    } on DioException {
-      return const Left(ServerFailure("Failed to delete device"));
+      await dio.delete('/devices/$deviceId/');
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      throw Exception("Failed to delete device: $e");
     }
   }
 
   @override
-  Future<Either<Failure, Device>> updateDevice(
-      int deviceId, String name, String subtitle) async {
+  Future<Device> updateDevice(int deviceId, String name, String subtitle) async {
     try {
       final res = await dio.put(
         '/devices/$deviceId/',
@@ -64,11 +46,9 @@ class DeviceRepositoryImpl implements DeviceRepository {
           'subtitle': subtitle,
         },
       );
-      return Right(Device.fromJson(res.data));
-    } on DioException catch (e) {
-      return Left(ServerFailure(e.response?.data['detail'] ?? "Failed to update device"));
+      return Device.fromJson(res.data);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      throw Exception("Failed to update device: $e");
     }
   }
 }

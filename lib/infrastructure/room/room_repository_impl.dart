@@ -1,66 +1,59 @@
 // lib/infrastructure/room/room_repository_impl.dart
-import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
-
-import '../../core/error/app_error.dart';
 import '../../domain/entities/room.dart';
 import '../../domain/repositories.dart';
 
 class RoomRepositoryImpl implements RoomRepository {
   final Dio dio;
 
+  // Constructor nhận Dio để gọi API
   RoomRepositoryImpl({required this.dio});
 
   @override
-  Future<Either<Failure, List<Room>>> getRooms() async {
+  Future<List<Room>> getRooms() async {
     try {
-      final res = await dio.get('/rooms/');
-      final List<dynamic> jsonList = res.data;
-      final rooms = jsonList.map((e) => Room.fromJson(e)).toList();
-      return Right(rooms);
-    } on DioException {
-      return const Left(ServerFailure("Failed to load rooms"));
+      final response = await dio.get('/rooms/');
+      // Map dữ liệu JSON trả về thành List<Room>
+      return (response.data as List)
+          .map((e) => Room.fromJson(e))
+          .toList();
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      throw Exception("Failed to load rooms: $e");
     }
   }
 
   @override
-  Future<Either<Failure, Room>> addRoom(String name) async {
+  Future<Room> addRoom(String name) async {
     try {
-      final res = await dio.post('/rooms/', data: {'name': name});
-      return Right(Room.fromJson(res.data));
-    } on DioException {
-      return const Left(ServerFailure("Failed to add room"));
+      final response = await dio.post(
+        '/rooms/',
+        data: {'name': name},
+      );
+      return Room.fromJson(response.data);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      throw Exception("Failed to add room: $e");
     }
   }
 
   @override
-  Future<Either<Failure, Unit>> deleteRoom(int roomId) async {
+  Future<void> deleteRoom(int roomId) async {
     try {
-      final res = await dio.delete('/rooms/$roomId/');
-      if (res.statusCode != 204) {
-         return const Left(ServerFailure("Failed to delete room"));
-      }
-      return const Right(unit);
-    } on DioException {
-      return const Left(ServerFailure("Failed to delete room"));
+      await dio.delete('/rooms/$roomId/');
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      throw Exception("Failed to delete room: $e");
     }
   }
 
   @override
-  Future<Either<Failure, Room>> updateRoom(int roomId, String name) async {
+  Future<Room> updateRoom(int roomId, String name) async {
     try {
-      final res = await dio.put('/rooms/$roomId/', data: {'name': name});
-      return Right(Room.fromJson(res.data));
-    } on DioException {
-      return const Left(ServerFailure("Failed to update room"));
+      final response = await dio.put(
+        '/rooms/$roomId/',
+        data: {'name': name},
+      );
+      return Room.fromJson(response.data);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      throw Exception("Failed to update room: $e");
     }
   }
 }
