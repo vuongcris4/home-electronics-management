@@ -38,11 +38,26 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = '';
     notifyListeners();
   }
-  
-  void _setLoginState(ViewState state) { _loginState = state; notifyListeners(); }
-  void _setRegisterState(ViewState state) { _registerState = state; notifyListeners(); }
-  void _setProfileState(ViewState state) { _profileState = state; notifyListeners(); }
-  void _setUpdateProfileState(ViewState state) { _updateProfileState = state; notifyListeners(); }
+
+  void _setLoginState(ViewState state) {
+    _loginState = state;
+    notifyListeners();
+  }
+
+  void _setRegisterState(ViewState state) {
+    _registerState = state;
+    notifyListeners();
+  }
+
+  void _setProfileState(ViewState state) {
+    _profileState = state;
+    notifyListeners();
+  }
+
+  void _setUpdateProfileState(ViewState state) {
+    _updateProfileState = state;
+    notifyListeners();
+  }
 
   // --- LOGIN ---
   Future<bool> login(String email, String password) async {
@@ -50,7 +65,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       // Gọi repository, nếu lỗi nó sẽ nhảy xuống catch
       await authRepository.login(email, password);
-      
+
       _setLoginState(ViewState.Success);
       return true;
     } catch (e) {
@@ -101,12 +116,15 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // --- UPDATE PROFILE ---
-  Future<bool> updateProfile({required String name, required String phoneNumber}) async {
+  Future<bool> updateProfile(
+      {required String name, required String phoneNumber}) async {
     _setUpdateProfileState(ViewState.Loading);
     try {
-      _user = await authRepository.updateUserProfile(name: name, phoneNumber: phoneNumber);
+      _user = await authRepository.updateUserProfile(
+          name: name, phoneNumber: phoneNumber);
       _setUpdateProfileState(ViewState.Success);
-      Future.delayed(const Duration(seconds: 1), () => _setUpdateProfileState(ViewState.Idle));
+      Future.delayed(const Duration(seconds: 1),
+          () => _setUpdateProfileState(ViewState.Idle));
       return true;
     } catch (e) {
       _errorMessage = e.toString().replaceAll("Exception: ", "");

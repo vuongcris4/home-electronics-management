@@ -19,14 +19,10 @@ const Color kLabelColor = Color(0xFF13304A);
 // --- Dữ liệu giả lập cho các icon ---
 // Một class (lớp) đơn giản để chứa thông tin cho mỗi icon.
 class IconInfo {
-  // Dữ liệu icon từ thư viện Material (ví dụ: Icons.lightbulb_outline).
   final IconData iconData;
-  // Nhãn (tên) hiển thị bên dưới icon (ví dụ: 'Light').
   final String label;
-  // Tên file ảnh trong thư mục assets/icons/ (ví dụ: 'lightbulb.png').
   final String assetName;
 
-  // Constructor (hàm khởi tạo) của class, yêu cầu tất cả các thuộc tính.
   IconInfo(
       {required this.iconData, required this.label, required this.assetName});
 }
@@ -59,12 +55,8 @@ class AddDeviceScreen extends StatefulWidget {
 
 // Đây là class State, nơi chứa toàn bộ trạng thái và logic của màn hình.
 class _AddDeviceScreenState extends State<AddDeviceScreen> {
-  // Controller để quản lý (lấy/đặt giá trị) cho ô nhập "Name Device".
   final _nameController = TextEditingController();
-  // Controller để quản lý cho ô nhập "Note".
   final _noteController = TextEditingController();
-  // Biến state để lưu trữ tên file icon đang được chọn.
-  // Mặc định, nó lấy icon đầu tiên trong danh sách availableIcons.
   String _selectedIconAsset = availableIcons.first.assetName;
 
   // Hàm dispose được gọi khi widget bị gỡ khỏi cây widget (ví dụ: khi đóng màn hình).
@@ -92,11 +84,9 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     }
 
     // Lấy HomeProvider từ cây widget.
-    // `listen: false` rất quan trọng: chúng ta chỉ muốn GỌI HÀM (`addNewDevice`),
     // không cần build lại màn hình này khi HomeProvider thay đổi.
     final provider = Provider.of<HomeProvider>(context, listen: false);
 
-    // ================== CHANGE IS HERE ==================
     // Ghi chú: Xác định loại thiết bị dựa trên icon đã chọn.
     // Đây là logic nghiệp vụ đơn giản: nếu icon là 'lightbulb.png'...
     final deviceType = _selectedIconAsset == 'lightbulb.png'
@@ -110,9 +100,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       'assets/icons/$_selectedIconAsset', // Tạo đường dẫn asset đầy đủ (ví dụ: 'assets/icons/tv.png').
       deviceType, // Truyền loại thiết bị đã xác định ở trên.
     );
-    // ================== END OF CHANGE ==================
 
-    // Sau khi await, kiểm tra xem widget có còn "mounted" (gắn vào cây) không.
     // Điều này để tránh lỗi nếu người dùng đã back ra khỏi màn hình trong khi đang chờ.
     if (mounted) {
       // Nếu thêm thành công (success == true).
@@ -134,48 +122,30 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   // Hàm `build` chịu trách nhiệm xây dựng giao diện người dùng (UI).
   @override
   Widget build(BuildContext context) {
-    // Lấy trạng thái `isLoadingAction` từ HomeProvider.
-    // Dùng `context.watch` (thay vì `Provider.of`) là cách viết ngắn gọn để
-    // "lắng nghe" sự thay đổi của provider.
-    // Khi `isLoadingAction` thay đổi (true/false), widget này sẽ tự động build lại.
     final isLoading = context.watch<HomeProvider>().isLoadingAction;
 
     // Trả về Scaffold, là cấu trúc cơ bản của một màn hình Material Design.
     return Scaffold(
       backgroundColor: Colors.white, // Đặt màu nền là trắng.
-      // SafeArea để đảm bảo nội dung không bị che bởi "tai thỏ" hoặc thanh điều hướng.
       body: SafeArea(
-        // SingleChildScrollView cho phép nội dung cuộn khi bàn phím hiện lên
-        // hoặc khi nội dung vượt quá chiều cao màn hình.
         child: SingleChildScrollView(
-          // Thêm khoảng đệm (padding) 35px ở hai bên trái/phải.
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 35.0),
-            // Sắp xếp các widget con theo chiều dọc.
             child: Column(
-              // Kéo dãn các con để lấp đầy chiều ngang.
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              // Danh sách các widget con.
               children: [
-                // Căn chỉnh nút "Back" sang bên trái.
                 Align(
                   alignment: Alignment.centerLeft,
-                  // Nút bấm có icon.
                   child: IconButton(
-                    // Icon mũi tên quay lại (kiểu iOS).
                     icon: const Icon(Icons.arrow_back_ios_new,
                         color: Colors.black),
-                    // Khi nhấn, gọi Navigator.pop để quay lại màn hình trước.
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),
-                // Một khoảng đệm dọc cao 20px.
                 const SizedBox(height: 20),
-                // Tiêu đề "Add Device".
                 const Text(
                   'Add Device',
-                  textAlign: TextAlign.center, // Căn giữa text.
-                  // Định nghĩa style cho text.
+                  textAlign: TextAlign.center, 
                   style: TextStyle(
                     color: Color(0xFF404040),
                     fontSize: 32,
@@ -183,25 +153,19 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                // Khoảng đệm dọc 60px.
                 const SizedBox(height: 60),
-                // Sử dụng widget `_CustomTextField` đã được định nghĩa ở dưới.
                 _CustomTextField(
                   label: 'Name Device',
                   hint: 'Name Device',
-                  controller: _nameController, // Gắn controller tương ứng.
+                  controller: _nameController,
                 ),
-                // Khoảng đệm dọc 30px.
                 const SizedBox(height: 30),
-                // Widget `_CustomTextField` cho ô "Note".
                 _CustomTextField(
                   label: 'Note',
                   hint: 'Note (e.g. brand, location)',
-                  controller: _noteController, // Gắn controller tương ứng.
+                  controller: _noteController,
                 ),
-                // Khoảng đệm dọc 60px.
                 const SizedBox(height: 60),
-                // Tiêu đề "Select Icon".
                 const Text(
                   'Select Icon',
                   textAlign: TextAlign.center,
@@ -212,19 +176,15 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                // Khoảng đệm dọc 30px.
                 const SizedBox(height: 30),
-                // SingleChildScrollView cho phép cuộn danh sách icon theo chiều ngang.
                 SingleChildScrollView(
-                  scrollDirection: Axis.horizontal, // Đặt hướng cuộn là ngang.
-                  // Sắp xếp các icon theo chiều ngang.
+                  scrollDirection: Axis.horizontal, 
                   child: Row(
                     // `map` để biến đổi mỗi `iconInfo` trong list `availableIcons`...
                     children: availableIcons.map((iconInfo) {
                       // ...thành một widget `_IconSelectionButton` với padding.
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                        // Sử dụng widget `_IconSelectionButton` (định nghĩa ở dưới).
                         child: _IconSelectionButton(
                           icon: iconInfo.iconData, // Truyền icon.
                           label: iconInfo.label, // Truyền nhãn.
@@ -369,10 +329,10 @@ class _CustomTextField extends StatelessWidget {
 
 // Định nghĩa widget custom cho nút chọn icon (ví dụ: nút 'Light', 'TV').
 class _IconSelectionButton extends StatelessWidget {
-  final IconData icon; // Icon (ví dụ: Icons.lightbulb_outline).
-  final String label; // Nhãn (ví dụ: 'Light').
-  final bool isSelected; // Trạng thái: có đang được chọn hay không.
-  final VoidCallback onTap; // Hàm (callback) sẽ được gọi khi nhấn vào.
+  final IconData icon; 
+  final String label; 
+  final bool isSelected;
+  final VoidCallback onTap; 
 
   // Constructor.
   const _IconSelectionButton({
@@ -386,11 +346,9 @@ class _IconSelectionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     // Sử dụng `GestureDetector` để bắt sự kiện `onTap`.
     return GestureDetector(
-      onTap: onTap, // Gán hàm callback.
-      // Sắp xếp Icon (trong Container) và Text (Label) theo chiều dọc.
+      onTap: onTap,
       child: Column(
         children: [
-          // `Container` để tạo nền (background) cho icon.
           Container(
             width: 67,
             height: 67,
@@ -424,14 +382,10 @@ class _IconSelectionButton extends StatelessWidget {
               size: 30,
             ),
           ),
-          // Khoảng đệm 10px giữa icon và label.
           const SizedBox(height: 10),
-          // Widget Text cho label.
           Text(
             label,
             style: TextStyle(
-              // Nếu được chọn, chữ màu chính.
-              // Nếu không, chữ màu phụ.
               color: isSelected ? kPrimaryColor : kTextColorSecondary,
               fontSize: 14,
               fontFamily: 'Inter',

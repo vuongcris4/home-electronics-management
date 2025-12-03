@@ -1,4 +1,11 @@
 // lib/core/api/auth_interceptor.dart
+
+// Auth Interceptor là lớp giúp:
+// 1. Tự động gắn Access Token vào mỗi API request
+// 2. Tự động refresh token khi Access token hết hạn
+// 3. Tự động retry request sau khi refresh token thành công
+// 4. Tự logout và điều hướng về login nếu refresh token cũng hết hạn.
+
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../injection_container.dart';

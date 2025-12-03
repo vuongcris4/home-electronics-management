@@ -37,25 +37,14 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
       return; // Dừng hàm nếu tên rỗng
     }
 
-    // 2. Lấy HomeProvider (từ Presentation Layer) để gọi business logic.
-    // (listen: false) vì ta chỉ cần gọi hàm, không cần build lại widget này
-    // ngay tại thời điểm gọi (việc build lại sẽ do .watch() ở dưới xử lý).
     final provider = Provider.of<HomeProvider>(context, listen: false);
 
-    // 3. Gọi hàm addNewRoom trong HomeProvider.
-    // Hàm này sẽ gọi AddRoomUseCase (Domain Layer) -> Repository (Infra Layer) -> API/DB.
-    // Chờ (await) cho đến khi UseCase hoàn thành và Provider cập nhật trạng thái.
     final success = await provider.addNewRoom(_nameController.text.trim());
 
-    // 4. (Best practice) Kiểm tra xem widget còn "mounted" (tồn tại trên cây widget) hay không
-    // trước khi thực hiện các thao tác liên quan đến BuildContext (như Navigator, SnackBar).
-    // Điều này tránh lỗi nếu người dùng thoát màn hình TRƯỚC KHI hàm async hoàn thành.
     if (mounted) {
       if (success) {
-        // 5a. Nếu thành công: Quay lại màn hình trước đó (HomeScreen).
         Navigator.of(context).pop();
       } else {
-        // 5b. Nếu thất bại: Hiển thị lỗi (lỗi này được set trong HomeProvider) cho người dùng.
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text('Failed to add room: ${provider.errorMessage}'),
@@ -75,14 +64,13 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        // ================== SỬA 1: BỌC BẰNG SingleChildScrollView ==================
-        // (Giúp màn hình không bị lỗi "Bottom Overflow" khi bàn phím hiện lên)
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(35.0, 0, 35.0, 40.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Mũi tên trái
                 Align(
                   alignment: Alignment.centerLeft,
                   child: IconButton(
@@ -92,6 +80,7 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
+                // Heading "Add Room"
                 const Text(
                   'Add Room',
                   textAlign: TextAlign.center,
@@ -103,10 +92,9 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
                   ),
                 ),
 
-                // ================== THAY THẾ Spacer ==================
-                // Đã xóa "const Spacer()"
                 const SizedBox(height: 40), // Thêm khoảng cách cố định
 
+                // Input
                 _CustomTextField(
                   label: 'Room',
                   hint: 'Enter Your Room',
@@ -114,19 +102,17 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
                 ),
                 const SizedBox(height: 60),
 
+                // Icon
                 Image.asset(
                   'assets/icons/Home1.png',
                   height: 140,
                   color: const Color(0xFF8FA9D6),
                 ),
 
-                // ================== SỬA 3: THAY THẾ Spacer ==================
-                // Đã xóa "const Spacer()"
                 const SizedBox(height: 80), // Thêm khoảng cách cố định
 
+                // Button
                 ElevatedButton(
-                  // Vô hiệu hóa nút (onPressed = null) nếu đang tải (isLoading = true),
-                  // ngược lại thì gán hàm _addRoom để thực thi khi nhấn.
                   onPressed: isLoading ? null : _addRoom,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: kPrimaryColor,
@@ -135,7 +121,6 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  // Hiển thị vòng quay loading hoặc chữ "Add" tùy thuộc vào trạng thái isLoading.
                   child: isLoading
                       ? const SizedBox(
                           height: 24, // Đặt kích thước cụ thể
@@ -164,8 +149,6 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
   }
 }
 
-// --- Widget tùy chỉnh cho TextField, không cần thay đổi ---
-// (Widget này đã được tách riêng, không chứa logic nghiệp vụ)
 class _CustomTextField extends StatelessWidget {
   final String label;
   final String hint;

@@ -14,6 +14,7 @@ import '../../domain/repositories.dart';
 // [UPDATE] Chỉ giữ lại type info
 enum AlertType { info }
 
+// Entity AlertLog
 class AlertLog {
   final String message;
   final DateTime timestamp;
@@ -42,6 +43,7 @@ class AlertLog {
       );
 }
 
+// Lifecycle của màn hình
 enum HomeState { Initial, Loading, Loaded, Error }
 
 // --- PROVIDER ---
@@ -105,12 +107,14 @@ class HomeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Hàm giúp lưu danh sách Alerts vào sharedPreferences
   Future<void> _saveAlerts() async {
     final List<String> alertJsonList =
         _alerts.map((alert) => jsonEncode(alert.toJson())).toList();
     await sharedPreferences.setStringList(_alertsKey, alertJsonList);
   }
 
+  // Hàm giúp load Alerts từ sharedPreferences
   void _loadAlerts() {
     final List<String>? alertJsonList =
         sharedPreferences.getStringList(_alertsKey);
@@ -121,6 +125,7 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
+  // Thêm log vào đầu danh sách và lưu danh sách
   void _addLog(String message, AlertType type) {
     _alerts.insert(
         0, AlertLog(message: message, timestamp: DateTime.now(), type: type));
@@ -130,6 +135,7 @@ class HomeProvider extends ChangeNotifier {
     _saveAlerts();
   }
 
+  // Chọn 0<=Room<length, kết nối tới Websocket _rooms[index] 
   void selectRoom(int index) {
     if (index >= 0 && index < _rooms.length) {
       _selectedRoomIndex = index;
@@ -138,6 +144,7 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
+  // Tìm kiếm một thiết bị cụ thể dựa trên ID (deviceId) trong danh sách các phòng (_rooms)
   Device? findDeviceById(int deviceId) {
     try {
       for (final room in _rooms) {
@@ -154,7 +161,9 @@ class HomeProvider extends ChangeNotifier {
   }
 
   // --- API / REPOSITORY METHODS (Using Try-Catch) ---
+  // Các màn hình thì luôn theo thứ tự trạng thái Loading -> Loaded -> Error
 
+  // Ban đầu lấy danh sách các phòng, select phòng đầu tiên, kết nối websocket tới phòng đó.
   Future<void> fetchRooms() async {
     _state = HomeState.Loading;
     notifyListeners();
@@ -177,11 +186,14 @@ class HomeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // _isLoadingAction: true -> false -> true
+  // Thêm phòng mới
   Future<bool> addNewRoom(String name) async {
     _isLoadingAction = true;
     notifyListeners();
 
     try {
+      // Thêm phòng mới, tự select phòng vừa mới thêm, và kết nối WebSocket tới.
       final newRoom = await roomRepository.addRoom(name);
       _rooms.add(newRoom);
       _selectedRoomIndex = _rooms.length - 1;
@@ -198,15 +210,14 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
+  // Xoá phòng đang được Select, giảm _selectedRoomIndex xuống -1
   Future<bool> removeSelectedRoom() async {
     if (selectedRoom == null) return false;
-
     _isLoadingAction = true;
     notifyListeners();
 
     try {
       await roomRepository.deleteRoom(selectedRoom!.id);
-      
       _rooms.removeAt(_selectedRoomIndex);
       _selectedRoomIndex = _rooms.isNotEmpty ? 0 : -1;
       
@@ -229,6 +240,7 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
+  // Thêm mới device
   Future<bool> addNewDevice(
     String name,
     String subtitle,
@@ -255,6 +267,7 @@ class HomeProvider extends ChangeNotifier {
       if (roomIndex != -1) {
         final updatedDevices = List<Device>.from(_rooms[roomIndex].devices)
           ..add(newDevice);
+          // UI (Provider / ChangeNotifier / Riverpod…) chỉ nhận ra thay đổi khi có object mới. Nếu bạn sửa trực tiếp list devices cũ, UI có thể không rebuild. Việc tạo list mới + copyWith đảm bảo Flutter hiểu rằng state đã thay đổi.
         _rooms[roomIndex] =
             _rooms[roomIndex].copyWith(devices: updatedDevices);
       }
@@ -378,17 +391,24 @@ class HomeProvider extends ChangeNotifier {
 
     print('Connecting to WebSocket: $uri');
 
+    // Trả về một WebSocketChannel
     _channel = WebSocketChannel.connect(uri);
 
+    // Lắng nghe WebSocket truyền dữ liệu
     _channelSubscription = _channel!.stream.listen((message) {
-      final data = jsonDecode(message);
+      final data = jsonDecode(message); // string decode về json
+      // Nếu backend gửi error thì chỉ print lỗi
       if (data.containsKey('error')) {
         print('WebSocket received error: ${data['error']}');
         return;
       }
+      // ID của device cần update
       final int deviceId = data['device_id'];
+      // trạng thái mới
       final bool isOn = data['is_on'];
+      // attributes -> object JSON chứa thông tin thêm.
       final Map<String, dynamic> attributes = data['attributes'] ?? {};
+      // Gộp is_on vào attributes để dễ xử lý
       attributes['is_on'] = isOn;
 
       _updateDeviceStateLocally(deviceId, attributes);
@@ -414,6 +434,10 @@ class HomeProvider extends ChangeNotifier {
     updateDeviceState(deviceId, {'is_on': newStatus});
   }
 
+  // Tìm thiết bị trong danh sách _rooms
+  // Cập nhật trạng thái mới (is_on, brightness,... )
+  // Ghi log khi thiết bị bật/ tắt
+  // Thông báo UI cập nhật (notifyListeners())
   void _updateDeviceStateLocally(
       int deviceId, Map<String, dynamic> attributes) {
     for (int roomIndex = 0; roomIndex < _rooms.length; roomIndex++) {
@@ -424,9 +448,10 @@ class HomeProvider extends ChangeNotifier {
         final currentDevice = _rooms[roomIndex].devices[deviceIndex];
         Device updatedDevice;
 
+        // attributes là JSON server gửi (trong websocket). Có thể có is_on hoặc không. Dùng kiểu bool? cho an toàn
         final bool? newIsOn = attributes['is_on'] as bool?;
         
-        // [UPDATE] Chỉ giữ logic log khi Bật/Tắt thiết bị (Info)
+        // Chỉ ghi log khi server gửi is_on hợp lệ. Và trạng thái thay đổi.
         if (newIsOn != null && newIsOn != currentDevice.isOn) {
           final roomName = _rooms[roomIndex].name;
           _addLog(
@@ -435,8 +460,8 @@ class HomeProvider extends ChangeNotifier {
           );
         }
 
-        // [UPDATE] Đã xóa phần logic Warning khi độ sáng > 90
-
+        // Nếu là đèn có thay đổi độ sáng. Update isOn. Update brightness nếu server trả về.
+        // Nếu không có, giữ giá trị cũ.
         if (currentDevice is DimmableLightDevice) {
           updatedDevice = currentDevice.copyWith(
             isOn: attributes['is_on'] as bool? ?? currentDevice.isOn,

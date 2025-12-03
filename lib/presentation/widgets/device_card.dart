@@ -43,10 +43,12 @@ class DeviceCard extends StatelessWidget {
             )
           ],
         ),
+        
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            // Chia ra Đèn, Button
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,6 +78,7 @@ class DeviceCard extends StatelessWidget {
                 ),
               ],
             ),
+            // Main text, Subtext
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
