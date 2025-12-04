@@ -383,7 +383,7 @@ class HomeProvider extends ChangeNotifier {
 
     final uri = Uri(
       scheme: 'wss',
-      host: AppConfig.baseUrl,
+      host: AppConfig.apiHost,
       path: '/ws/devices/$roomId/', // Chuyển room thì đổi websocket qua room khác
       queryParameters: {'token': token},  // Có token nên phân biệt được giữa các user với nhau
     );
