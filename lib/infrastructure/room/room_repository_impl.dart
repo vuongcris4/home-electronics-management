@@ -9,11 +9,11 @@ class RoomRepositoryImpl implements RoomRepository {
   // Constructor nhận Dio để gọi API
   RoomRepositoryImpl({required this.dio});
 
+  // Lấy Danh sách Rooms: nhận dữ liệu JSON và trả về thành List<Room>
   @override
   Future<List<Room>> getRooms() async {
     try {
       final response = await dio.get('/rooms/');
-      // Map dữ liệu JSON trả về thành List<Room>
       return (response.data as List)
           .map((e) => Room.fromJson(e))
           .toList();
@@ -22,6 +22,7 @@ class RoomRepositoryImpl implements RoomRepository {
     }
   }
 
+  // Thêm Room: với tham số name
   @override
   Future<Room> addRoom(String name) async {
     try {
@@ -35,6 +36,7 @@ class RoomRepositoryImpl implements RoomRepository {
     }
   }
 
+  // Deleete Room với tham số rooomId
   @override
   Future<void> deleteRoom(int roomId) async {
     try {

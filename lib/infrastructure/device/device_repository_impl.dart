@@ -8,6 +8,7 @@ class DeviceRepositoryImpl implements DeviceRepository {
 
   DeviceRepositoryImpl({required this.dio});
 
+  // Create device
   @override
   Future<Device> addDevice(String name, String subtitle, String iconAsset, int roomId, DeviceType deviceType) async {
     try {
@@ -27,6 +28,7 @@ class DeviceRepositoryImpl implements DeviceRepository {
     }
   }
 
+  // Delete device
   @override
   Future<void> deleteDevice(int deviceId) async {
     try {
@@ -36,6 +38,7 @@ class DeviceRepositoryImpl implements DeviceRepository {
     }
   }
 
+  // Update device
   @override
   Future<Device> updateDevice(int deviceId, String name, String subtitle) async {
     try {

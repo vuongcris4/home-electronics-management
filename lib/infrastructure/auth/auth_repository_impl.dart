@@ -14,6 +14,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required this.storage,
   });
 
+  // login thì request tới /api/token/ và lưu vào storage access_token, refresh_token
   @override
   Future<void> login(String email, String password) async {
     try {
@@ -38,6 +39,7 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  // register thì request tới /users/register/ để tạo CSDL ở phía server.
   @override
   Future<void> register({
     required String name,
@@ -75,6 +77,7 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  // Lấy thông tin user /users/me/
   @override
   Future<User> getUserProfile() async {
     try {
@@ -87,6 +90,7 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  // Cập nhật name, phone_number cho user hiện tại.
   @override
   Future<User> updateUserProfile({
     required String name,

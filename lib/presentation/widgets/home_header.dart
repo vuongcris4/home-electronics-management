@@ -14,25 +14,11 @@ const Color kTextColorSecondary = Color(0xFF6F7EA8);
 class HomeHeader extends StatelessWidget {
   const HomeHeader({super.key});
 
-  Future<void> _logout(BuildContext context) async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final homeProvider = Provider.of<HomeProvider>(context, listen: false);
-    authProvider.clearUserData();
-    await homeProvider.clearLocalData();
-
-    final storage = getIt<FlutterSecureStorage>();
-    await storage.delete(key: 'access_token');
-    await storage.delete(key: 'refresh_token');
-
-    if (context.mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 25),
+      // trang trí cho container
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.only(
@@ -55,15 +41,15 @@ class HomeHeader extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ===================== MODIFIED WIDGET =====================
+              // Tháng ngày năm góc trái trên dùng
               Text(
                 DateFormat('MMMM d, yyyy').format(DateTime.now()),
-                style: const TextStyle(color: kTextColorSecondary, fontSize: 14),
+                style:
+                    const TextStyle(color: kTextColorSecondary, fontSize: 14),
               ),
-              // ==========================================================
               const SizedBox(height: 8),
               const Text(
-                'Smart home',
+                'QL Thiết bị điện',
                 style: TextStyle(
                   color: kTextColorPrimary,
                   fontSize: 25,
@@ -72,17 +58,20 @@ class HomeHeader extends StatelessWidget {
               ),
             ],
           ),
-          // ===================== MODIFIED WIDGET (LOGOUT BUTTON) =====================
+
+          // Nút logout
           SizedBox(
             width: 44,
             height: 44,
             child: IconButton(
-              padding: EdgeInsets.zero,
-              icon: Image.asset('assets/icons/exit.png',),
-              onPressed: () => _logout(context),
-            ),
+                padding: EdgeInsets.zero,
+                icon: Image.asset(
+                  'assets/icons/exit.png',
+                ),
+                onPressed: () {
+                  Provider.of<AuthProvider>(context, listen: false).logout(context);
+                }),
           ),
-          // ========================================================================
         ],
       ),
     );

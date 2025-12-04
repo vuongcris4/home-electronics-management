@@ -4,6 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/constants/app_config.dart'; // Import file config
 import 'core/api/auth_interceptor.dart';
 import 'core/navigation/navigation_service.dart';
 

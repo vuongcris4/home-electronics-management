@@ -8,6 +8,7 @@
 
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:smart_home/core/constants/app_config.dart';
 import '../../injection_container.dart';
 import '../navigation/navigation_service.dart';
 
@@ -18,14 +19,14 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    // Không đính kèm token cho các request login/register/refresh
+    // Không đính kèm token cho các request login/register/refresh (login chưa có token, đăng kí không cần token, request refresh token thì không được gắn access token cũ)
     if (options.path.endsWith('/token/') ||
         options.path.endsWith('/register/') ||
         options.path.endsWith('/token/refresh/')) {
       return handler.next(options);
     }
     
-    // Tự động thêm access token vào header
+    // Tự động thêm access token vào header -> Mọi request protected API đều tự động được gắn token.
     final storage = getIt<FlutterSecureStorage>();
     final token = await storage.read(key: 'access_token');
     if (token != null) {
@@ -45,7 +46,7 @@ class AuthInterceptor extends Interceptor {
         try {
           // Gửi yêu cầu lấy token mới
           final refreshResponse = await dio.post(
-            'https://mrh3.dongnama.app/api/token/refresh/',
+            '${AppConfig.baseUrl}/api/token/refresh/',
             data: {'refresh': refreshToken},
           );
 
@@ -54,11 +55,7 @@ class AuthInterceptor extends Interceptor {
             final newAccessToken = refreshResponse.data['access'];
             await storage.write(key: 'access_token', value: newAccessToken);
             
-            // Có thể backend của bạn cũng trả về refresh token mới, hãy xử lý nó nếu cần
-            // final newRefreshToken = refreshResponse.data['refresh'];
-            // await storage.write(key: 'refresh_token', value: newRefreshToken);
-
-            // Cập nhật header của request bị lỗi và thử lại
+            // Update lại request cũ bằng access token mới -> người dùng k bị văng app (retry tự động)
             err.requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
             final response = await dio.fetch(err.requestOptions);
             return handler.resolve(response);

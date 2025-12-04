@@ -1,20 +1,18 @@
 import 'package:equatable/equatable.dart';
 
 enum DeviceType {
-  binarySwitch,   // Công tắc bật/tắt
-  dimmableLight,  // Đèn chỉnh được độ sáng
+  binarySwitch, // công tắc
+  dimmableLight, // đèn độ sáng
 }
 
 abstract class Device extends Equatable {
-  // --- THUỘC TÍNH CHUNG ---
-  final int id;                 // ID duy nhất
-  final String name;            // Tên thiết bị
-  final String subtitle;        // Mô tả phụ
-  final String iconAsset;       // Đường dẫn đến file icon
-  final bool isOn;              // Trạng thái bật/tắt
-  final DeviceType type;        // Loại thiết bị (từ enum trên)
+  final int id;
+  final String name; // tên
+  final String subtitle; // mô tả
+  final String iconAsset;
+  final bool isOn; // on/off ?
+  final DeviceType type; // công tắc hay đèn ?
 
-  // Constructor (hàm khởi tạo)
   const Device({
     required this.id,
     required this.name,
@@ -24,26 +22,20 @@ abstract class Device extends Equatable {
     required this.type,
   });
 
-  // Factory constructor: Dùng để tạo đối tượng Device từ dữ liệu JSON
   factory Device.fromJson(Map<String, dynamic> json) {
-    print('[DEBUG] Parsing Device JSON: $json');
-
     final deviceTypeStr = json['device_type'] as String?;
 
-    // Chuyển đổi giá trị chuỗi (ví dụ: "dimmableLight") thành enum (DeviceType.dimmableLight)// Nếu không tìm thấy (hoặc deviceTypeStr là null) thì mặc định là 'binarySwitch'
+    // deviceType = DeviceType.binarySwitch hoặc DeviceType.dimmableLight
     final deviceType = DeviceType.values.firstWhere(
           (e) => e.name == deviceTypeStr,
-      
       orElse: () => DeviceType.binarySwitch,
     );
 
     switch (deviceType) {
       case DeviceType.dimmableLight:
-      // Nếu là đèn, gọi hàm .fromJson của DimmableLightDevice
         return DimmableLightDevice.fromJson(json);
       case DeviceType.binarySwitch:
-      default: // Mặc định (hoặc là binarySwitch)
-      // Gọi hàm .fromJson của BinarySwitchDevice
+      default: 
         return BinarySwitchDevice.fromJson(json);
     }
   }
@@ -58,7 +50,6 @@ abstract class Device extends Equatable {
   List<Object?> get props => [id, name, subtitle, iconAsset, isOn, type];
 }
 
-// Lớp con: BinarySwitchDevice (Công tắc) - Kế thừa từ Device
 class BinarySwitchDevice extends Device {
   // Constructor, gán cứng 'type' là binarySwitch
   const BinarySwitchDevice({
@@ -74,7 +65,7 @@ class BinarySwitchDevice extends Device {
     return BinarySwitchDevice(
       id: json['id'],
       name: json['name'],
-      subtitle: json['subtitle'] ?? '', // Nếu subtitle là null, dùng chuỗi rỗng
+      subtitle: json['subtitle'] ?? '',
       iconAsset: json['icon_asset'],
       isOn: json['is_on'],
     );
@@ -87,11 +78,11 @@ class BinarySwitchDevice extends Device {
     bool? isOn,
   }) {
     return BinarySwitchDevice(
-      id: id,                               // Giữ nguyên id
-      name: name ?? this.name,              // Nếu name mới là null, dùng name cũ (this.name)
-      subtitle: subtitle ?? this.subtitle,  // Tương tự cho subtitle
-      iconAsset: iconAsset,                 // Giữ nguyên iconAsset
-      isOn: isOn ?? this.isOn,              // Tương tự cho isOn
+      id: id,
+      name: name ?? this.name,
+      subtitle: subtitle ?? this.subtitle,
+      iconAsset: iconAsset,
+      isOn: isOn ?? this.isOn,
     );
   }
 }
@@ -100,7 +91,6 @@ class DimmableLightDevice extends Device {
   // Thuộc tính riêng: độ sáng (0-100)
   final int brightness;
 
-  // Constructor, gán cứng 'type' là dimmableLight
   const DimmableLightDevice({
     required super.id,
     required super.name,
@@ -142,6 +132,5 @@ class DimmableLightDevice extends Device {
   }
 
   @override
-  // 'props' của Equatable: Bổ sung 'brightness' vào danh sách so sánh
   List<Object?> get props => super.props..add(brightness);
 }

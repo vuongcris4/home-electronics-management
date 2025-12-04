@@ -1,5 +1,9 @@
 // lib/presentation/providers/auth_provider.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:provider/provider.dart'; // Import Provider
+import 'home_provider.dart'; // Import HomeProvider để clear data
+import 'package:smart_home/injection_container.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories.dart';
 
@@ -131,5 +135,25 @@ class AuthProvider extends ChangeNotifier {
       _setUpdateProfileState(ViewState.Error);
       return false;
     }
+  }
+
+  Future<void> logout(BuildContext context) async {
+    // 1. Xóa token trong Secure Storage
+    final storage = getIt<FlutterSecureStorage>();
+    await storage.delete(key: 'access_token');
+    await storage.delete(key: 'refesh_token');
+
+    // 2. Clear state của AuthProvider (User hiện tại)
+    clearUserData();
+
+    // 3. Clear state của HomeProvider (Danh sách phòng, devices, websocket...)
+    // Kiểm tra mounted để đảm bảo context còn hợp lệ
+    if (context.mounted) {
+      Provider.of<HomeProvider>(context, listen: false).clearLocalData();
+      
+      // 4. Điều hướng về trang Login & xóa stack cũ
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    }
+
   }
 }

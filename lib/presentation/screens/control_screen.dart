@@ -63,6 +63,7 @@ class _ControlScreenState extends State<ControlScreen> {
   }
 }
 
+// Header trên cùng
 class _Header extends StatelessWidget {
   final Device device;
   const _Header({required this.device});
@@ -71,14 +72,16 @@ class _Header extends StatelessWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Device?'),
+        title: const Text('Xoá thiết bị?'),
         content: Text(
-            "Are you sure you want to delete '${device.name}'? This action cannot be undone."),
+            "Có chắc xoá '${device.name}' không bro?"),
         actions: [
+          // Nút nhấn Cancel và không lưu
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
+          // Nhấn nút xoá, gọi đến provider.removeDevice và quay về home screen
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
@@ -89,7 +92,7 @@ class _Header extends StatelessWidget {
                   ScaffoldMessenger.of(context)
                     ..removeCurrentSnackBar()
                     ..showSnackBar(const SnackBar(
-                      content: Text('Device deleted successfully.'),
+                      content: Text('Xoá thiết bị thành công'),
                       backgroundColor: Colors.green,
                     ));
                   Navigator.pop(context); // Go back to home screen
@@ -97,7 +100,7 @@ class _Header extends StatelessWidget {
                   ScaffoldMessenger.of(context)
                     ..removeCurrentSnackBar()
                     ..showSnackBar(SnackBar(
-                      content: Text('Error: ${provider.errorMessage}'),
+                      content: Text('Lỗi: ${provider.errorMessage}'),
                       backgroundColor: Colors.red,
                     ));
                 }
@@ -110,12 +113,13 @@ class _Header extends StatelessWidget {
     );
   }
 
-  // ===================== THÊM MỚI =====================
   void _showEditDeviceDialog(BuildContext context, HomeProvider provider) {
     final nameController = TextEditingController(text: device.name);
     final subtitleController = TextEditingController(text: device.subtitle);
     final formKey = GlobalKey<FormState>();
-
+    
+    // Dialog có 2 ô nhập liệu
+    // Dialog có 2 nút nhấn Save, Cancel
     showDialog(
         context: context,
         builder: (dialogContext) {
@@ -143,6 +147,8 @@ class _Header extends StatelessWidget {
               TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
                   child: const Text('Cancel')),
+
+              // Nếu nhấn nút Save thì update device -> trả về success
               ElevatedButton(
                 onPressed: () async {
                   if (formKey.currentState!.validate()) {
@@ -166,7 +172,6 @@ class _Header extends StatelessWidget {
           );
         });
   }
-  // ===================== KẾT THÚC =====================
 
   @override
   Widget build(BuildContext context) {
@@ -176,10 +181,12 @@ class _Header extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Icon quay lại, nhấn vào thì quay lại màn hình trước
           IconButton(
             icon: const Icon(Icons.arrow_back_ios_new, color: kTextColorPrimary),
             onPressed: () => Navigator.of(context).pop(),
           ),
+          // device.name ở giữa
           Expanded(
             child: Text(
               device.name,
@@ -193,6 +200,7 @@ class _Header extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
+          // edit, delete
           Row(
             children: [
               IconButton(
@@ -211,14 +219,13 @@ class _Header extends StatelessWidget {
   }
 }
 
-// ... Các widget _DimmableLightControls, _BinarySwitchControls, _PowerControlButton không thay đổi ...
-
 class _DimmableLightControls extends StatelessWidget {
   final DimmableLightDevice device;
   const _DimmableLightControls({required this.device});
 
   @override
   Widget build(BuildContext context) {
+    // Để update State brightness hoặc power
     final provider = Provider.of<HomeProvider>(context, listen: false);
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -226,10 +233,12 @@ class _DimmableLightControls extends StatelessWidget {
         SleekCircularSlider(
           appearance: CircularSliderAppearance(
             customWidths: CustomSliderWidths(
-              trackWidth: 12,
-              progressBarWidth: 12,
-              handlerSize: 8,
+              trackWidth: 12, // độ dày vòng tròn nhạt
+              progressBarWidth: 12, // độ vày vòng tròn xanh
+              handlerSize: 8, // kích thước cái chấm kéo
             ),
+            // nếu device đang ON -> màu xanh, gradient đẹp.
+            // Nếu OFF -> xám
             customColors: CustomSliderColors(
               trackColor: const Color(0xFFECF1FD),
               dotColor: device.isOn ? kPrimaryColor : kTextColorSecondary,
@@ -237,16 +246,19 @@ class _DimmableLightControls extends StatelessWidget {
                   ? [const Color(0xFF538FFB), const Color(0xFF2666DE)]
                   : [kTextColorSecondary, kTextColorSecondary],
             ),
-            startAngle: 135,
+            startAngle: 135, 
             angleRange: 270,
-            size: MediaQuery.of(context).size.width * 0.7,
+            size: MediaQuery.of(context).size.width * 0.7,  // Kích thước là 70% chiều rộng màn hình.
           ),
           min: 0,
           max: 100,
           initialValue: device.brightness.toDouble(),
+          // khi người dùng thả ngón tay (k phải khi đang kéo), ta gửi event
           onChangeEnd: (value) {
             provider.updateDeviceState(device.id, {'brightness': value.round()});
           },
+          
+          // Nội dung bên trong vòng tròn
           innerWidget: (double value) {
             return Center(
               child: Column(
@@ -254,6 +266,7 @@ class _DimmableLightControls extends StatelessWidget {
                 children: [
                   Text.rich(
                     TextSpan(children: [
+                      // Giá trị
                       TextSpan(
                         text: '${value.round()}',
                         style: TextStyle(
@@ -263,6 +276,7 @@ class _DimmableLightControls extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
+                      // %
                       TextSpan(
                         text: '%',
                         style: TextStyle(
@@ -277,6 +291,7 @@ class _DimmableLightControls extends StatelessWidget {
                     ]),
                   ),
                   const SizedBox(height: 8),
+                  // chữ Brightness
                   Text(
                     'Brightness',
                     style: TextStyle(
@@ -291,6 +306,7 @@ class _DimmableLightControls extends StatelessWidget {
             );
           },
         ),
+
         _PowerControlButton(device: device),
       ],
     );
@@ -319,6 +335,7 @@ class _PowerControlButton extends StatelessWidget {
     final bool isOn = device.isOn;
 
     return GestureDetector(
+      // Nhấn nút thì đổi công tắc
       onTap: () {
         provider.toggleDeviceStatus(device.id, !isOn);
       },
@@ -330,15 +347,19 @@ class _PowerControlButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(19),
           border: isOn ? null : Border.all(color: Colors.grey.shade300),
         ),
+
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Icon nút nguồn
             Icon(
               Icons.power_settings_new_rounded,
               color: isOn ? Colors.white : kTextColorSecondary,
               size: 30,
             ),
             const SizedBox(height: 20),
+
+            // Chữ Power
             Text(
               'Power',
               style: TextStyle(
@@ -348,6 +369,8 @@ class _PowerControlButton extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 5),
+
+            // Chữ ON OFF
             Text(
               isOn ? 'ON' : 'OFF',
               style: TextStyle(

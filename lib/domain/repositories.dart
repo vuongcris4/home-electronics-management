@@ -3,9 +3,8 @@ import 'entities/device.dart';
 import 'entities/room.dart';
 import 'entities/user.dart';
 
-//--- Auth Repository ---
+// Interface cho auth repository trong tầng lõi
 abstract class AuthRepository {
-  // Login xong không cần trả về gì, lỗi thì throw, thành công thì thôi
   Future<void> login(String email, String password); 
   
   Future<void> register({
@@ -24,7 +23,7 @@ abstract class AuthRepository {
   });
 }
 
-//--- Device Repository ---
+// Interface cho device repository trong tầng lõi
 abstract class DeviceRepository {
   Future<Device> addDevice(
     String name,
@@ -43,7 +42,7 @@ abstract class DeviceRepository {
   );
 }
 
-//--- Room Repository ---
+// Interface cho room repository trong tầng lõi
 abstract class RoomRepository {
   Future<List<Room>> getRooms();
   Future<Room> addRoom(String name);

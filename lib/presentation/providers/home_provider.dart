@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:smart_home/core/constants/app_config.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../domain/entities/device.dart';
@@ -11,7 +12,6 @@ import '../../domain/entities/room.dart';
 import '../../domain/repositories.dart';
 
 // --- ENUMS & MODELS ---
-// [UPDATE] Chỉ giữ lại type info
 enum AlertType { info }
 
 // Entity AlertLog
@@ -95,8 +95,8 @@ class HomeProvider extends ChangeNotifier {
   // --- HELPER METHODS ---
 
   Future<void> clearLocalData() async {
-    _channelSubscription?.cancel();
-    _channel?.sink.close();
+    _channelSubscription?.cancel(); // Ngừng lắng nghe dữ liệu trả về
+    _channel?.sink.close(); // Ngắt kết nối hoàn toàn với _channel
     _channel = null;
     _rooms.clear();
     _alerts.clear();
@@ -371,7 +371,6 @@ class HomeProvider extends ChangeNotifier {
   }
 
   // --- WEBSOCKET LOGIC ---
-
   Future<void> connectToWebSocket(int roomId) async {
     _channelSubscription?.cancel();
     _channel?.sink.close();
@@ -384,9 +383,9 @@ class HomeProvider extends ChangeNotifier {
 
     final uri = Uri(
       scheme: 'wss',
-      host: 'mrh3.dongnama.app',
-      path: '/ws/devices/$roomId/',
-      queryParameters: {'token': token},
+      host: AppConfig.baseUrl,
+      path: '/ws/devices/$roomId/', // Chuyển room thì đổi websocket qua room khác
+      queryParameters: {'token': token},  // Có token nên phân biệt được giữa các user với nhau
     );
 
     print('Connecting to WebSocket: $uri');
@@ -402,16 +401,12 @@ class HomeProvider extends ChangeNotifier {
         print('WebSocket received error: ${data['error']}');
         return;
       }
-      // ID của device cần update
       final int deviceId = data['device_id'];
-      // trạng thái mới
       final bool isOn = data['is_on'];
-      // attributes -> object JSON chứa thông tin thêm.
       final Map<String, dynamic> attributes = data['attributes'] ?? {};
-      // Gộp is_on vào attributes để dễ xử lý
       attributes['is_on'] = isOn;
 
-      _updateDeviceStateLocally(deviceId, attributes);
+      _updateDeviceStateLocally(deviceId, attributes);  // {attributes: is_on:}
     }, onError: (error) {
       print('WebSocket Error: $error');
     }, onDone: () {
