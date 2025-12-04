@@ -65,7 +65,7 @@ Future<void> configureDependencies() async {
 
   getIt.registerLazySingleton<Dio>(() {
     final dio = Dio(BaseOptions(
-      baseUrl: "https://mrh3.dongnama.app/api",
+      baseUrl: AppConfig.baseUrl,
       headers: {'Content-Type': 'application/json; charset=UTF-8'},
     ));
     dio.interceptors.add(AuthInterceptor(dio));
