@@ -25,8 +25,8 @@ venv/
 env/
 
 # Environment Variables (RẤT QUAN TRỌNG: Chứa mật khẩu/key)
-backend/.env
-.env
+# backend/.env
+# .env
 
 # Database
 backend/db.sqlite3
