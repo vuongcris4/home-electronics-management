@@ -41,6 +41,8 @@ Vào http://localhost:8005/admin để check xem BACKEND hoạt động ok chưa
 
 ## PHẦN 2: SETUP FRONTEND (APP MOBILE)
 
+### Bước 1: Vào thư mục frontend
+
 ```bash
 cd frontend
 ```
