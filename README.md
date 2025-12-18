@@ -1,4 +1,4 @@
-# Hướng Dẫn Triển Khai Ứng dụng quản lí Thiết bị Điện (MrH3)
+# Hướng Dẫn Triển Khai Ứng dụng QLTBĐ (MrH3)
 
 Hệ thống quản lý thiết bị điện trong nhà gồm 2 phần: **Backend (Django)** chạy trên máy tính và **Frontend (Flutter)** chạy trên điện thoại.
 
@@ -45,11 +45,9 @@ Sau khi container chạy xong, bạn cần chạy lệnh gom file tĩnh (CSS/JS)
 ```bash
 # Gom file tĩnh (Fix lỗi giao diện Admin)
 docker compose -p mrh3 exec backend python manage.py collectstatic --noinput
-
-# Tạo tài khoản Admin để đăng nhập (Làm theo hướng dẫn trên màn hình)
-docker compose -p mrh3 exec backend python manage.py createsuperuser
-
 ```
+
+Vào http://localhost:8005/admin để check xem BACKEND hoạt động ok chưa.
 
 ### Bước 3: Xác định IP của máy tính (Quan trọng)
 
