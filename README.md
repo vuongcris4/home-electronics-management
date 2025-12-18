@@ -1,7 +1,3 @@
-Đây là hướng dẫn đã được cập nhật. Vì bạn gửi kèm cả `pubspec.yaml`, người nhận sẽ **không cần thủ công khai báo thư viện nữa**, việc cài đặt sẽ nhanh và đơn giản hơn nhiều.
-
----
-
 # Hướng Dẫn Triển Khai Hệ Thống Smart Home (LAN)
 
 Hệ thống bao gồm Backend (Django) chạy trên máy tính và Frontend (Flutter) chạy trên điện thoại.
