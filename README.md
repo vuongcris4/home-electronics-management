@@ -33,7 +33,14 @@ docker compose -p mrh3 exec backend python manage.py collectstatic --noinput
 
 Vào http://localhost:8005/admin để check xem BACKEND hoạt động ok chưa.
 
-### Bước 3: Xác định IP của máy tính
+### Bước 3: Django Migrate (để tạo table trên docker Postgresql)
+```bash
+docker exec -it smart_home_backend python manage.py migrate
+```
+
+
+
+### Bước 4: Xác định IP của máy tính
 
 * **Windows:** Mở CMD gõ `ipconfig` -> Tìm dòng **IPv4 Address** (Ví dụ: `192.168.1.5`).
 * **Mac/Linux:** Mở Terminal gõ `ifconfig` -> Tìm dòng `inet` (Ví dụ: `192.168.1.5`).
