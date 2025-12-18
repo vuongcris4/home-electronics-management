@@ -1,3 +1,4 @@
+// frontend/lib/presentation/providers/home_provider.dart
 // lib/presentation/providers/home_provider.dart
 import 'dart:async';
 import 'dart:convert';
@@ -381,37 +382,57 @@ class HomeProvider extends ChangeNotifier {
       return;
     }
 
+    // [FIX START] Logic xử lý URL kết nối WebSocket
+    String host = AppConfig.apiHost;
+    int? port;
+    
+    // Tách port nếu host có dạng "IP:PORT" (ví dụ: 192.168.1.5:8005)
+    if (host.contains(':')) {
+      final parts = host.split(':');
+      host = parts[0];
+      port = int.tryParse(parts[1]);
+    }
+
+    // Nếu chạy HTTP thường -> dùng WS, nếu HTTPS -> dùng WSS
+    final scheme = AppConfig.protocol == 'https' ? 'wss' : 'ws';
+
     final uri = Uri(
-      scheme: 'wss',
-      host: AppConfig.apiHost,
-      path: '/ws/devices/$roomId/', // Chuyển room thì đổi websocket qua room khác
-      queryParameters: {'token': token},  // Có token nên phân biệt được giữa các user với nhau
+      scheme: scheme,
+      host: host,
+      port: port, // Truyền port riêng để Dart tự xử lý
+      path: '/ws/devices/$roomId/',
+      queryParameters: {'token': token},
     );
+    // [FIX END]
 
     print('Connecting to WebSocket: $uri');
 
-    // Trả về một WebSocketChannel
-    _channel = WebSocketChannel.connect(uri);
+    try {
+      // Trả về một WebSocketChannel
+      _channel = WebSocketChannel.connect(uri);
 
-    // Lắng nghe WebSocket truyền dữ liệu
-    _channelSubscription = _channel!.stream.listen((message) {
-      final data = jsonDecode(message); // string decode về json
-      // Nếu backend gửi error thì chỉ print lỗi
-      if (data.containsKey('error')) {
-        print('WebSocket received error: ${data['error']}');
-        return;
-      }
-      final int deviceId = data['device_id'];
-      final bool isOn = data['is_on'];
-      final Map<String, dynamic> attributes = data['attributes'] ?? {};
-      attributes['is_on'] = isOn;
+      // Lắng nghe WebSocket truyền dữ liệu
+      _channelSubscription = _channel!.stream.listen((message) {
+        final data = jsonDecode(message); // string decode về json
+        // Nếu backend gửi error thì chỉ print lỗi
+        if (data.containsKey('error')) {
+          print('WebSocket received error: ${data['error']}');
+          return;
+        }
+        final int deviceId = data['device_id'];
+        final bool isOn = data['is_on'];
+        final Map<String, dynamic> attributes = data['attributes'] ?? {};
+        attributes['is_on'] = isOn;
 
-      _updateDeviceStateLocally(deviceId, attributes);  // {attributes: is_on:}
-    }, onError: (error) {
-      print('WebSocket Error: $error');
-    }, onDone: () {
-      print('WebSocket Disconnected');
-    });
+        _updateDeviceStateLocally(deviceId, attributes);  // {attributes: is_on:}
+      }, onError: (error) {
+        print('WebSocket Stream Error: $error');
+      }, onDone: () {
+        print('WebSocket Disconnected');
+      });
+    } catch (e) {
+      print('WebSocket Connection Exception: $e');
+    }
   }
 
   void updateDeviceState(int deviceId, Map<String, dynamic> newAttributes) {
