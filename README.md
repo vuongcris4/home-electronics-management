@@ -1,100 +1,136 @@
-# Hướng Dẫn Triển Khai Hệ Thống Smart Home (LAN)
+# Hướng Dẫn Triển Khai Ứng dụng quản lí Thiết bị Điện (MrH3)
 
-Hệ thống bao gồm Backend (Django) chạy trên máy tính và Frontend (Flutter) chạy trên điện thoại.
+Hệ thống quản lý thiết bị điện trong nhà gồm 2 phần: **Backend (Django)** chạy trên máy tính và **Frontend (Flutter)** chạy trên điện thoại.
 
-### Chuẩn bị
+## 🛠 Yêu Cầu Chuẩn Bị
 
-1. **Máy tính:** Đã cài [Docker Desktop](https://www.docker.com/products/docker-desktop/) và [Flutter SDK](https://docs.flutter.dev/get-started/install).
-2. **Điện thoại Android:** Đã bật chế độ Developer Options (Gỡ lỗi USB).
-3. **Mạng:** Máy tính và Điện thoại phải kết nối **cùng một Wifi**.
-4. **Dữ liệu nhận được:** Folder `backend`, folder `lib`, file `pubspec.yaml` (và folder `assets` nếu có).
-
----
-
-## PHẦN 1: SETUP BACKEND (Trên Máy Tính)
-
-**Bước 1: Lấy địa chỉ IP của máy tính**
-
-* **Windows:** Mở CMD, gõ `ipconfig`. Tìm dòng **IPv4 Address** (ví dụ: `192.168.1.5`).
-* **Mac/Linux:** Mở Terminal, gõ `ifconfig`.
-* *Lưu ý IP này để dùng ở Phần 2.*
-
-**Bước 2: Cấu hình và chạy Docker**
-
-1. Vào thư mục `backend`, mở file `.env`.
-2. Thêm IP máy tính vào dòng `ALLOWED_HOSTS`:
-```env
-ALLOWED_HOSTS=*,localhost,127.0.0.1,192.168.1.5
-
-```
+1. **Máy tính (Server):**
+* Đã cài đặt [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+* Đã cài đặt [Flutter SDK](https://docs.flutter.dev/get-started/install).
 
 
-3. Tại thư mục `backend` (nơi có file `docker-compose.yml`), mở Terminal chạy:
-```bash
-docker compose -p mrh3 up -d
-```
-docker exec -it smart_home_backend python manage.py migrate
+2. **Điện thoại (Client):**
+* Điện thoại Android/iOS đã bật chế độ nhà phát triển (Developer Options) và gỡ lỗi USB (USB Debugging).
 
-4. Đợi server chạy xong (Backend port `8005`).
+
+3. **Mạng:** Máy tính và Điện thoại bắt buộc phải kết nối **cùng một mạng Wifi**.
+4. **Source Code:** Bạn cần có folder `backend`, folder `lib`, file `pubspec.yaml` (và folder `assets` nếu có).
 
 ---
 
-## PHẦN 2: SETUP FRONTEND (Trên máy tính để nạp vào điện thoại)
+## PHẦN 1: SETUP BACKEND (SERVER)
 
-Do mã nguồn Frontend chỉ gồm các thành phần cốt lõi, bạn cần khởi tạo khung dự án trước.
+### Bước 1: Khởi chạy Server
 
-**Bước 1: Khởi tạo dự án mới**
-Mở Terminal tại thư mục muốn chứa code và chạy:
+Mở Terminal (Command Prompt/PowerShell hoặc VS Code Terminal), trỏ vào thư mục `backend`:
 
 ```bash
+cd backend
+
+```
+
+Chạy Docker Compose để dựng container:
+
+```bash
+docker compose -p mrh3 up -d --build
+
+```
+
+*(Chờ đến khi các container `db`, `redis`, `backend` ở trạng thái Started)*
+
+### Bước 2: Cấu hình hệ thống & Sửa lỗi giao diện Admin
+
+Sau khi container chạy xong, bạn cần chạy lệnh gom file tĩnh (CSS/JS) để trang Admin không bị lỗi giao diện:
+
+```bash
+# Gom file tĩnh (Fix lỗi giao diện Admin)
+docker compose -p mrh3 exec backend python manage.py collectstatic --noinput
+
+# Tạo tài khoản Admin để đăng nhập (Làm theo hướng dẫn trên màn hình)
+docker compose -p mrh3 exec backend python manage.py createsuperuser
+
+```
+
+### Bước 3: Xác định IP của máy tính (Quan trọng)
+
+Bạn cần biết IP máy tính để nạp vào App điện thoại.
+
+* **Windows:** Mở CMD gõ `ipconfig` -> Tìm dòng **IPv4 Address** (Ví dụ: `192.168.1.5`).
+* **Mac/Linux:** Mở Terminal gõ `ifconfig` -> Tìm dòng `inet` (Ví dụ: `192.168.1.5`).
+
+> **Lưu ý:** Hãy ghi nhớ IP này cho Phần 2.
+
+---
+
+## PHẦN 2: SETUP FRONTEND (APP MOBILE)
+
+Vì source code Frontend thường chỉ chứa phần lõi để giảm dung lượng, bạn cần khởi tạo khung dự án Flutter trước.
+
+### Bước 1: Khởi tạo dự án
+
+Mở Terminal tại thư mục cha (nơi bạn muốn lưu code frontend):
+
+```bash
+# Tạo dự án mới
 flutter create home_electronics_management
+
+# Di chuyển vào thư mục dự án
 cd home_electronics_management
 
 ```
 
-**Bước 2: Thay thế mã nguồn (Quan trọng)**
+### Bước 2: Thay thế mã nguồn
 
-1. Vào thư mục dự án `home_electronics_management` vừa tạo.
-2. **Xóa** folder `lib` và file `pubspec.yaml` mặc định đi.
-3. **Copy** folder `lib` và file `pubspec.yaml` bạn nhận được dán vào đó.
-4. **Lưu ý về Assets:**
-* Mở file `pubspec.yaml` kiểm tra phần `assets:`. Nếu thấy có khai báo (ví dụ `- assets/icons/`), bạn **bắt buộc** phải có thư mục `assets` tương ứng nằm cùng cấp với thư mục `lib`.
-* *Nếu người gửi chưa gửi thư mục `assets`, hãy yêu cầu họ gửi thêm, nếu không App sẽ lỗi.*
+Thực hiện thủ công trong File Explorer (Windows) hoặc Finder (Mac):
+
+1. **Xóa:** Folder `lib` và file `pubspec.yaml` mặc định trong thư mục `home_electronics_management` vừa tạo.
+2. **Copy & Paste:** Dán folder `lib` và file `pubspec.yaml` từ source code bạn nhận được vào đó.
+3. **Cấu hình Assets (Hình ảnh/Icon):**
+* Tạo thư mục tên là `assets` nằm cùng cấp với folder `lib`.
+* Copy toàn bộ hình ảnh/icon vào thư mục `assets` này (đảm bảo cấu trúc đúng như trong file `pubspec.yaml` khai báo).
 
 
 
-**Bước 3: Cài đặt thư viện**
-Tại thư mục dự án, chạy lệnh sau để tải tự động các thư viện đã khai báo trong `pubspec.yaml`:
+### Bước 3: Cài đặt thư viện
+
+Tại terminal của thư mục frontend, chạy:
 
 ```bash
 flutter pub get
 
 ```
 
-**Bước 4: Kết nối điện thoại và Chạy App**
+### Bước 4: Chạy App lên điện thoại
 
-1. Cắm cáp USB kết nối điện thoại với máy tính.
-2. Chạy lệnh sau (Thay `192.168.1.5` bằng IP máy tính bạn lấy ở Phần 1):
+Kết nối điện thoại với máy tính qua cáp USB. Chạy lệnh sau (Thay `YOUR_IP` bằng IP bạn tìm được ở Phần 1):
+
 ```bash
-flutter run --dart-define=API_HOST=192.168.1.5:5123 --dart-define=PROTOCOL=http
+# Ví dụ: IP là 192.168.1.5
+flutter run --dart-define=API_HOST=192.168.1.5:8005 --dart-define=PROTOCOL=http
 
 ```
 
-
-
 ---
 
-## CÂU HỎI THƯỜNG GẶP (FAQ)
+## ❓ CÂU HỎI THƯỜNG GẶP (FAQ)
 
-**Q: App báo lỗi "Connection refused" hoặc xoay vòng mãi?**
-A:
+**1. App báo lỗi "Connection refused" hoặc xoay vòng (loading) mãi?**
 
-1. Kiểm tra xem điện thoại và máy tính có chung Wifi không.
-2. Tắt Tường lửa (Firewall) trên máy tính (hoặc mở port 5123).
-3. Đảm bảo IP trong lệnh `flutter run` chính xác là IP LAN của máy tính.
+* Kiểm tra điện thoại và máy tính có chung Wifi không.
+* Tắt Tường lửa (Firewall) trên máy tính hoặc mở port `8005`.
+* Kiểm tra lại địa chỉ IP trong lệnh `flutter run` đã đúng chưa.
 
-**Q: App báo lỗi "Asset not found"?**
-A: Bạn thiếu thư mục ảnh. Hãy tạo thư mục `assets` ở thư mục gốc dự án và bỏ các hình ảnh/icon vào đúng cấu trúc như trong file `pubspec.yaml` mô tả.
+**2. Vào trang Admin trên web (localhost:8005/admin) bị mất giao diện (chỉ có chữ)?**
 
-**Q: Mở App lên màn hình trắng trơn?**
-A: Kiểm tra lại backend xem Docker có đang chạy ổn định không và đã tạo database chưa. Nếu chưa có tài khoản đăng nhập, hãy chạy lệnh tạo admin ở backend: `docker-compose exec backend python manage.py createsuperuser`.
+* Bạn quên chưa chạy lệnh `collectstatic`. Hãy chạy lại lệnh ở **Phần 1 - Bước 2**.
+
+**3. App báo lỗi "Asset not found" hoặc "Unable to load asset"?**
+
+* Kiểm tra file `pubspec.yaml` phần `assets:`.
+* Đảm bảo bạn đã tạo thư mục `assets` ở thư mục gốc và bỏ ảnh vào đó.
+* Sau khi thêm ảnh, cần chạy lại `flutter pub get` và tắt app chạy lại từ đầu.
+
+**4. Màn hình App trắng trơn sau khi mở?**
+
+* Server Backend có thể chưa chạy xong hoặc Database bị lỗi.
+* Kiểm tra log backend bằng lệnh: `docker compose -p mrh3 logs -f backend`.
