@@ -1,45 +1,69 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
+# ========================
+# GENERAL / OS / IDE
+# ========================
 .DS_Store
-.atom/
-.build/
-.buildlog/
+Thumbs.db
+*.log
 .history
-.svn/
-.swiftpm/
-migrate_working_dir/
-
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
+.vscode/
 .idea/
+*.swp
+*.swo
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# ========================
+# BACKEND (Python/Django)
+# ========================
+# Byte-compiled / Optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
 
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# Virtual Environment
+backend/venv/
+backend/env/
+venv/
+env/
+
+# Environment Variables (RẤT QUAN TRỌNG: Chứa mật khẩu/key)
+backend/.env
+.env
+
+# Database
+backend/db.sqlite3
+*.sqlite3
+
+# Django Static & Media
+backend/staticfiles/
+backend/media/
+
+# ========================
+# FRONTEND (Flutter)
+# ========================
+# Flutter/Dart internal
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
-/coverage/
 
-# Symbolication related
-app.*.symbols
+# Build artifacts
+build/
+frontend/build/
 
-# Obfuscation related
-app.*.map.json
+# Android specific
+# local.properties chứa đường dẫn SDK máy cá nhân -> không commit
+frontend/android/local.properties
+frontend/android/key.properties
+frontend/android/app/debug
+frontend/android/app/profile
+frontend/android/app/release
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# iOS specific
+frontend/ios/.symlinks
+frontend/ios/Pods/
+frontend/ios/Flutter/.last_build_id
+
+# ========================
+# DOCKER & DATA
+# ========================
+postgres_data/
