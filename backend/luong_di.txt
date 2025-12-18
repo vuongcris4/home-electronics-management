@@ -1,0 +1,16 @@
+1. Entry point: ASGI & router
+1.1. home_electronics_backend/asgi.py
+    ProtocolTypeRouter:
+    Nếu request là HTTP → dùng django_asgi_app (bình thường như Django).
+    Nếu là websocket → chạy qua TokenAuthMiddleware + URLRouter.
+    Tức là mọi WebSocket đều đi qua middleware JWT của bạn trước, rồi mới được điều vào DeviceConsumer.
+
+2. Xác thực JWT cho WebSocket (Giải mã token thành object User)
+2.1. home_electronics_backend/token_auth_middleware.py
+
+3. Định tuyến WebSocket tới Consumer
+3.1. home_electronics_backend/routing.py
+
+4. Consumer: lifecycle & logic
+4.1 DeviceConsumer.connect()
+4.2 Check owner
