@@ -1,69 +1,23 @@
-# ========================
-# GENERAL / OS / IDE
-# ========================
-.DS_Store
-Thumbs.db
-*.log
-.history
-.vscode/
-.idea/
-*.swp
-*.swo
+# --- CẤU HÌNH CHO FRONTEND ---
+# 1. Chặn tất cả mọi thứ bên trong folder frontend
+frontend/*
 
-# ========================
-# BACKEND (Python/Django)
-# ========================
-# Byte-compiled / Optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+# 2. Dùng dấu ! để giữ lại những thứ cần thiết trong frontend
+!frontend/lib/
+!frontend/assets/
+!frontend/pubspec.yaml
+# Nên giữ thêm file lock để đồng bộ version thư viện
+!frontend/pubspec.lock 
 
-# Virtual Environment
+
+# Nếu backend là Python/Django:
+backend/__pycache__/
+backend/*.pyc
 backend/venv/
-backend/env/
-venv/
-env/
+backend/.env
 
-# Environment Variables (RẤT QUAN TRỌNG: Chứa mật khẩu/key)
-# backend/.env
-# .env
 
-# Database
-backend/db.sqlite3
-*.sqlite3
-
-# Django Static & Media
-# backend/staticfiles/
-# backend/media/
-
-# ========================
-# FRONTEND (Flutter)
-# ========================
-# Flutter/Dart internal
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.pub-cache/
-.pub/
-
-# Build artifacts
-build/
-frontend/build/
-
-# Android specific
-# local.properties chứa đường dẫn SDK máy cá nhân -> không commit
-frontend/android/local.properties
-frontend/android/key.properties
-frontend/android/app/debug
-frontend/android/app/profile
-frontend/android/app/release
-
-# iOS specific
-frontend/ios/.symlinks
-frontend/ios/Pods/
-frontend/ios/Flutter/.last_build_id
-
-# ========================
-# DOCKER & DATA
-# ========================
-postgres_data/
+# --- CÁC FILE HỆ THỐNG CHUNG ---
+.DS_Store
+.idea/
+.vscode/

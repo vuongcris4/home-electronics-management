@@ -31,12 +31,11 @@ ALLOWED_HOSTS=*,localhost,127.0.0.1,192.168.1.5
 
 3. Tại thư mục `backend` (nơi có file `docker-compose.yml`), mở Terminal chạy:
 ```bash
-docker-compose up --build
-
+docker compose -p mrh3 up -d
 ```
+docker exec -it smart_home_backend python manage.py migrate
 
-
-4. Đợi server chạy xong (Backend port `5123`).
+4. Đợi server chạy xong (Backend port `8005`).
 
 ---
 
