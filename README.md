@@ -1,6 +1,6 @@
 # Hướng Dẫn Triển Khai Ứng dụng QLTBĐ (MrH3)
 
-Hệ thống quản lý thiết bị điện trong nhà gồm 2 phần: **Backend (Django)** chạy trên máy tính và **Frontend (Flutter)** chạy trên điện thoại.
+Ứng dụng gồm: **Backend (Django)** và **Frontend (Flutter)**.
 <img width="1566" height="820" alt="CleanShot 2025-12-18 at 22 30 11@2x" src="https://github.com/user-attachments/assets/a70d7360-639c-490a-b7f7-524e867c6060" />
 
 ## 🛠 Yêu Cầu Chuẩn Bị
