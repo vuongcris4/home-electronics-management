@@ -74,6 +74,9 @@ CHANNEL_LAYERS = {
 }
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+
     'django.contrib.sessions.middleware.SessionMiddleware',
     # Thêm CorsMiddleware vào đây, ngay trên CommonMiddleware
     'corsheaders.middleware.CorsMiddleware',
@@ -174,3 +177,16 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Đường dẫn URL để truy cập các file tĩnh (ví dụ: /static/admin/css/...)
+STATIC_URL = 'static/'
+
+# THÊM DÒNG NÀY: Đây là nơi lệnh collectstatic sẽ copy file vào
+# Trong Docker, nó sẽ tạo ra thư mục 'staticfiles' nằm cùng cấp với manage.py
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# (Tùy chọn) Nếu bạn có thư mục static riêng của dự án
+STATICFILES_DIRS = [
+    # BASE_DIR / "static", # Bỏ comment nếu bạn thực sự có folder 'static' trong 'backend/'
+]
