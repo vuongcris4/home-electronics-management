@@ -28,7 +28,6 @@ docker compose -p mrh3 up -d --build
 
 
 ```bash
-# Gom file tĩnh (Fix lỗi giao diện Admin)
 docker compose -p mrh3 exec backend python manage.py collectstatic --noinput
 ```
 
